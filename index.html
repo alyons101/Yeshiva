@@ -215,6 +215,7 @@ mark {
 }
 .yeshivot-title em { font-style: italic; }
 .yeshivot-sub { font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gray); white-space: nowrap; }
+.yeshivot-sub .compare-hint { font-size: 1em; font-weight: 600; }
 
 .yeshivot-grid {
   max-width: 1100px; margin: 0 auto; padding: 0 48px 120px;
@@ -718,6 +719,9 @@ input[type="search"]::-webkit-search-cancel-button { display: none; -webkit-appe
   margin-top: 14px; font-size: 0.63rem; letter-spacing: 0.08em;
   color: var(--mid); text-align: center; line-height: 1.5;
 }
+.add-footer-note.warning {
+  font-weight: 700; color: #c0392b;
+}
 /* success state */
 .add-success {
   display: none; text-align: center; padding: 16px 0 8px;
@@ -1058,7 +1062,7 @@ mark {
 <div class="view active" id="viewSearch">
   <div class="search-hero">
     <p class="search-eyebrow">Class of 2026 &middot; Israel</p>
-    <h1 class="search-title"><span>Find anyone.</span> <br><em>Instantly.</em></h1>
+    <h1 class="search-title">Find anyone. <br><em>Instantly.</em></h1>
     <div class="search-box">
       <input type="search" class="search-input" id="searchInput"
         placeholder="Type any name&hellip;" autocomplete="off" spellcheck="false" aria-label="Search students by name"/>
@@ -1104,7 +1108,7 @@ mark {
     <div>
       <h2 class="yeshivot-title">All <em>Yeshivot</em></h2>
     </div>
-    <span class="yeshivot-sub" id="yeshivotSub">29 programs &mdash; click any to explore &mdash; <strong style="font-size:1em;font-weight:600">⌃ ctrl+click to compare</strong></span>
+    <span class="yeshivot-sub" id="yeshivotSub">29 programs &mdash; click any to explore &mdash; <strong class="compare-hint">⌃ ctrl+click to compare</strong></span>
   </div>
   <div class="yeshivot-grid" id="yeshivotGrid">
     <div class="skeleton skeleton-card"></div>
@@ -1283,7 +1287,7 @@ function updateCounters() {
   const qsPhones = document.getElementById('qsPhones');
   if(qsPhones) qsPhones.textContent = phoneCount;
   const yeshivotSub = document.getElementById('yeshivotSub');
-  if(yeshivotSub) yeshivotSub.innerHTML = yCount + ' programs &mdash; click any to explore &mdash; <strong style="font-size:1em;font-weight:600">&#x2303; ctrl+click to compare</strong>';
+  if(yeshivotSub) yeshivotSub.innerHTML = yCount + ' programs &mdash; click any to explore &mdash; <strong class="compare-hint">&#x2303; ctrl+click to compare</strong>';
 }
 
 // ── FIX 8: build HS datalist from known schools (2+ appearances) ──────
@@ -2031,7 +2035,7 @@ updateCounters();
       </div>
       <div class="add-error" id="addError"></div>
       <button class="add-submit-btn" onclick="submitAdd()">Add to My Session &rarr;</button>
-      <p class="add-footer-note" style="font-weight:700;color:#c0392b">Added entries are saved for this browser session only</p>
+      <p class="add-footer-note warning">Added entries are saved for this browser session only</p>
     </div>
     <div class="add-success" id="addSuccess"></div>
   </div>
