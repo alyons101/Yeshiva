@@ -1417,12 +1417,10 @@ const HS_HARDCODED = [
   'Westchester Day School','Hebrew Academy','NSHA','Bnei Akiva',
   'Torah Academy','Ida Crown','South Bend Hebrew Day','OJCS','OCS'
 ];
-const HS_PHONE_RE_AC = HS_PHONE_RE;
-
 function getHsSchoolList() {
   const counts = {};
   getStudents().forEach(s => {
-    if (!s.high_school || HS_PHONE_RE_AC.test(s.high_school)) return;
+    if (!s.high_school || HS_PHONE_RE.test(s.high_school)) return;
     const n = normalizeHsName(s.high_school);
     counts[n] = (counts[n]||0)+1;
   });
@@ -1484,7 +1482,7 @@ function buildHsDropdown(input) {
   if(unrecWarn) unrecWarn.style.display = 'none';
 
   // Phone number check
-  if (HS_PHONE_RE_AC.test(val.trim())) {
+  if (HS_PHONE_RE.test(val.trim())) {
     if(phoneWarn) phoneWarn.style.display = 'block';
     closeHsDropdown();
     return;
@@ -1495,7 +1493,7 @@ function buildHsDropdown(input) {
   const schools = getHsSchoolList();
   const q = val.toLowerCase().trim();
   const scored = schools
-    .map(({0: name, 1: count}) => ({ name, count, score: scoreMatch(q, name) }))
+    .map(([name, count]) => ({ name, count, score: scoreMatch(q, name) }))
     .filter(x => x.score > 0)
     .sort((a,b) => (b.score - a.score) || (b.count - a.count))
     .slice(0,7);
@@ -1562,7 +1560,7 @@ function initHsAutocomplete() {
       const schools = getHsSchoolList();
       const recognized = schools.some(([name]) => name.toLowerCase() === key) || HS_ALIASES[key];
       const unrecWarn = document.getElementById('hsUnrecognizedWarn');
-      if (!recognized && val && !HS_PHONE_RE_AC.test(val) && unrecWarn) {
+      if (!recognized && val && !HS_PHONE_RE.test(val) && unrecWarn) {
         unrecWarn.style.display = 'block';
       }
     }, 200);
@@ -1609,7 +1607,7 @@ function buildYeshivaDropdown(input) {
   const yeshivot = getYeshivot(); // [[name, count], ...]
 
   const scored = yeshivot
-    .map(([name, count]) => ({ name: normalizeYeshivaName(name), raw: name, count, score: scoreMatch(q, name) }))
+    .map(([name, count]) => ({ name: normalizeYeshivaName(name), raw: name, count, score: scoreMatch(q, normalizeYeshivaName(name)) }))
     .filter(x => x.score > 0)
     .sort((a,b) => (b.score - a.score) || (b.count - a.count))
     .slice(0, 10);
