@@ -903,6 +903,18 @@ const ALL_YESHIVA_NAMES = ["Yeshivat Milafafon Tzafon", "Orayta", "Shaalvim", "R
 let EXTRA_STUDENTS = JSON.parse(localStorage.getItem('extra_students') || '[]');
 let EXTRA_YESHIVOT = JSON.parse(localStorage.getItem('extra_yeshivot') || '[]');
 
+// ── High-school name aliases (maps any variant → canonical name) ─────
+// 'hasmonean' entry ensures correct casing even if user types all-caps
+const HS_ALIASES = {
+  'hasmo': 'Hasmonean',
+  'hasmonean': 'Hasmonean',
+};
+function normalizeHsName(name) {
+  if (!name?.trim()) return name;
+  const key = name.trim().toLowerCase();
+  return HS_ALIASES[key] || name.trim();
+}
+
 function getStudents() {
   return [...BASE_STUDENTS, ...EXTRA_STUDENTS];
 }
@@ -915,7 +927,12 @@ function getYeshivot() {
 function getHsList() {
   const all = getStudents();
   const counts = {};
-  all.forEach(s => { if(s.high_school) counts[s.high_school]=(counts[s.high_school]||0)+1; });
+  all.forEach(s => {
+    if(s.high_school) {
+      const normalized = normalizeHsName(s.high_school);
+      counts[normalized] = (counts[normalized]||0)+1;
+    }
+  });
   return Object.entries(counts).sort((a,b)=>b[1]-a[1]);
 }
 
@@ -1010,13 +1027,13 @@ function renderSearch(q){
   $sm.textContent=res.length===1?'1 result':res.length+' results';
   res.forEach((s,i)=>{
     const li=document.createElement('li'); li.className='result-item'; li.style.animationDelay=(i*26)+'ms';
-    const hs=s.high_school||'—';
+    const hs=normalizeHsName(s.high_school)||'—';
     const badge = s._added ? '<span class="new-badge">NEW</span>' : '';
     li.innerHTML=`
       <div>
         <div class="result-name">${hl(s.name,q)} ${badge}</div>
         <div class="result-path">
-          <span class="tag tag-hs" onclick="openHsOverlay('${esc(s.high_school)}')">${esc(hs)}</span>
+          <span class="tag tag-hs" onclick="openHsOverlay('${esc(normalizeHsName(s.high_school)||'')}')">${esc(hs)}</span>
           <span class="result-arrow">&#8594;</span>
           <span class="tag tag-yeshiva" onclick="openOverlay('yeshiva','${esc(s.yeshiva)}')">${esc(s.yeshiva)}</span>
         </div>
@@ -1106,10 +1123,11 @@ function openOverlay(type,name){
 }
 
 function openHsOverlay(hs){
-  overlayStudents=getStudents().filter(s=>s.high_school&&s.high_school.toLowerCase()===hs.toLowerCase());
+  const canonicalHs = normalizeHsName(hs);
+  overlayStudents=getStudents().filter(s=>s.high_school&&normalizeHsName(s.high_school).toLowerCase()===canonicalHs.toLowerCase());
   overlaySort='alpha'; overlaySchoolFilter=null;
   document.getElementById('overlayEyebrow').textContent='High School';
-  document.getElementById('overlayTitle').textContent=hs;
+  document.getElementById('overlayTitle').textContent=canonicalHs;
   document.getElementById('overlayMeta').textContent=overlayStudents.length+' students across '+new Set(overlayStudents.map(s=>s.yeshiva)).size+' yeshivot';
   document.getElementById('overlaySearch').value='';
   document.querySelectorAll('.sort-btn').forEach((b,i)=>b.classList.toggle('active',i===0));
@@ -1124,7 +1142,12 @@ function openHsOverlay(hs){
 function buildSchoolChips(students,field){
   const div=document.getElementById('overlaySchools'); div.innerHTML='';
   const counts={};
-  students.forEach(s=>{if(s[field])counts[s[field]]=(counts[s[field]]||0)+1;});
+  students.forEach(s=>{
+    if(s[field]){
+      const val = field==='high_school' ? normalizeHsName(s[field]) : s[field];
+      counts[val]=(counts[val]||0)+1;
+    }
+  });
   Object.entries(counts).sort((a,b)=>b[1]-a[1]).forEach(([val,n])=>{
     const chip=document.createElement('span'); chip.className='school-chip';
     chip.textContent=val+(n>1?' ('+n+')':'');
@@ -1168,7 +1191,7 @@ function setSort(s,btn){
 function renderOverlayList(students,query){
   const list=document.getElementById('overlayList'); list.innerHTML='';
   let filtered=[...students];
-  if(overlaySchoolFilter) filtered=filtered.filter(s=>s.yeshiva===overlaySchoolFilter||s.high_school===overlaySchoolFilter);
+  if(overlaySchoolFilter) filtered=filtered.filter(s=>s.yeshiva===overlaySchoolFilter||normalizeHsName(s.high_school)===overlaySchoolFilter);
   if(query.trim()){
     const q=norm(query);
     filtered=filtered.filter(s=>norm(s.name).includes(q)||norm(s.high_school).includes(q));
@@ -1182,7 +1205,7 @@ function renderOverlayList(students,query){
   filtered.forEach((s,i)=>{
     const li=document.createElement('li'); li.className='overlay-item'; li.style.animationDelay=(i*16)+'ms';
     const badge=s._added?'<span class="new-badge">NEW</span>':'';
-    li.innerHTML=`<span class="oi-name">${esc(s.name)} ${badge}</span><span class="oi-hs">${esc(s.high_school||'—')}</span><span class="oi-phone">${esc(s.phone||'')}</span>`;
+    li.innerHTML=`<span class="oi-name">${esc(s.name)} ${badge}</span><span class="oi-hs">${esc(normalizeHsName(s.high_school)||'—')}</span><span class="oi-phone">${esc(s.phone||'')}</span>`;
     list.appendChild(li);
   });
 }
@@ -1306,7 +1329,7 @@ function closeAddModal(){
 function submitAdd(){
   if(addModalMode === 'student'){
     const name = document.getElementById('addName').value.trim();
-    const hs = document.getElementById('addHs').value.trim();
+    const hs = normalizeHsName(document.getElementById('addHs').value.trim());
     const phone = document.getElementById('addPhone').value.trim();
     let yeshiva = document.getElementById('addYeshivaSelect').value;
     if(yeshiva === '__new__'){
