@@ -81,6 +81,9 @@ body {
 }
 .nav-btn:hover, .nav-btn.active { color: var(--black); }
 .nav-btn:hover::after, .nav-btn.active::after { transform: scaleX(1); }
+/* On desktop, header-row1 is transparent (display:contents) so brand and pill
+   remain as direct flex children of .header, preserving the original layout */
+.header-row1 { display: contents; }
 .header-pill {
   font-size: 0.62rem; letter-spacing: 0.1em; color: var(--mid);
   font-weight: 400; white-space: nowrap;
@@ -1080,6 +1083,7 @@ mark {
 }
 .yeshiva-dropdown-item:first-child { border-radius: 12px 12px 0 0; }
 .yeshiva-dropdown-item:last-child { border-radius: 0 0 12px 12px; }
+.yeshiva-dropdown-add { font-style: italic; color: var(--accent); }
 .yeshiva-dropdown-item:hover, .yeshiva-dropdown-item.active { background: #f5f0e8; }
 
 /* ── MOBILE IMPROVEMENTS ── */
@@ -1096,6 +1100,7 @@ mark {
     flex-direction: column;
     align-items: stretch;
     gap: 0;
+    border-bottom: 1px solid var(--accent);
   }
   .header-row1 {
     display: flex; align-items: center; justify-content: space-between;
@@ -1542,7 +1547,9 @@ function closeHsDropdown() {
   hsDropdownActive = -1;
 }
 
+let _hsAutoInited = false;
 function initHsAutocomplete() {
+  if (_hsAutoInited) return; _hsAutoInited = true;
   const input = document.getElementById('addHs');
   if (!input) return;
 
@@ -1556,9 +1563,9 @@ function initHsAutocomplete() {
       if (!val) return;
       const key = val.toLowerCase();
       if (HS_ALIASES[key]) { input.value = HS_ALIASES[key]; return; }
-      // Check if value is recognized
+      // Check if value is recognized (no need to re-check HS_ALIASES since we already returned above)
       const schools = getHsSchoolList();
-      const recognized = schools.some(([name]) => name.toLowerCase() === key) || HS_ALIASES[key];
+      const recognized = schools.some(([name]) => name.toLowerCase() === key);
       const unrecWarn = document.getElementById('hsUnrecognizedWarn');
       if (!recognized && val && !HS_PHONE_RE.test(val) && unrecWarn) {
         unrecWarn.style.display = 'block';
@@ -1618,9 +1625,8 @@ function buildYeshivaDropdown(input) {
 
   // Add "+ new" option
   const addItem = document.createElement('div');
-  addItem.className = 'yeshiva-dropdown-item';
-  addItem.style.fontStyle = 'italic'; addItem.style.color = 'var(--accent)';
-  addItem.innerHTML = `<em>+ Add "${esc(val)}" as new yeshiva</em>`;
+  addItem.className = 'yeshiva-dropdown-item yeshiva-dropdown-add';
+  addItem.innerHTML = `+ Add "${esc(val)}" as new yeshiva`;
   addItem.addEventListener('mousedown', e => {
     e.preventDefault();
     input.value = val;
@@ -1671,7 +1677,9 @@ function closeYeshivaDropdown() {
   yeshivaDropdownActive = -1;
 }
 
+let _yeshivaAutoInited = false;
 function initYeshivaAutocomplete() {
+  if (_yeshivaAutoInited) return; _yeshivaAutoInited = true;
   const input = document.getElementById('addYeshivaInput');
   if (!input) return;
   const hiddenInput = document.getElementById('addYeshivaSelect');
@@ -2059,9 +2067,8 @@ function renderOverlayList(students,query){
     filtered=filtered.filter(s=>{
       if(norm(s.name).includes(q)) return true;
       if(norm(s.high_school||'').includes(q)) return true;
-      // fuzzy: check char sequence
-      const t=norm(s.name);
-      let qi=0; for(const ch of t){if(ch===q[qi])qi++;} if(qi===q.length&&q.length>=3) return true;
+      // fuzzy: reuse scoreMatch for consistency (min length 3 to avoid false positives)
+      if(q.length>=3 && scoreMatch(q, norm(s.name)) > 0) return true;
       return false;
     });
   }
@@ -2300,7 +2307,7 @@ function submitAdd(){
 
     // FIX 1: validate yeshiva selection
     if(!yeshiva){
-      showFieldError('addYeshivaSelect','addYeshivaError','Please select your yeshiva.');
+      showFieldError('addYeshivaInput','addYeshivaError','Please select your yeshiva.');
       hasError=true;
     } else if(yeshiva === '__new__'){
       const newYeshiva = document.getElementById('addYeshivaNew').value.trim();
