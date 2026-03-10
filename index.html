@@ -14,6 +14,9 @@
 <meta property="og:type" content="website">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:ital,wght@0,200;0,300;0,400;1,300&display=swap" rel="stylesheet">
+<!-- Supabase JS SDK (loaded early so supabaseClient.js can use it) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabaseClient.js"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
@@ -755,6 +758,44 @@ input[type="search"]::-webkit-search-cancel-button { display: none; -webkit-appe
   transition: background 0.15s;
 }
 .modal-done-btn:hover { background: #2a2a26; }
+/* ── Success animation ── */
+.success-anim { margin: 0 auto 20px; }
+.success-checkmark {
+  width: 56px; height: 56px; background: var(--accent); border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem; color: var(--white); margin: 0 auto;
+  animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1);
+}
+.success-pending-icon {
+  width: 56px; height: 56px; background: var(--mid); border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem; color: var(--white); margin: 0 auto;
+  animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1);
+}
+/* ── Confetti ── */
+.confetti-container {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  overflow: hidden; pointer-events: none; z-index: 10; border-radius: 4px;
+}
+.confetti-piece {
+  position: absolute; top: -12px;
+  animation: confettiFall 2.8s ease-in forwards;
+}
+@keyframes confettiFall {
+  0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
+  80%  { opacity: 1; }
+  100% { transform: translateY(500px) rotate(720deg); opacity: 0; }
+}
+/* ── Submission loading state ── */
+.add-submit-btn:disabled {
+  opacity: 0.6; transform: none; cursor: default; pointer-events: none;
+}
+/* ── NEW badge (realtime slide-in) ── */
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.result-item.realtime-new { animation: slideIn 0.4s ease forwards; }
 
 /* ── ADD SELF floating button ── */
 .add-self-fab {
@@ -1372,6 +1413,167 @@ const ALL_YESHIVA_NAMES = ["Yeshivat Milafafon Tzafon", "Orayta", "Shaalvim", "R
 let EXTRA_STUDENTS = JSON.parse(localStorage.getItem('extra_students') || '[]');
 let EXTRA_YESHIVOT = JSON.parse(localStorage.getItem('extra_yeshivot') || '[]');
 
+// ── Supabase-backed submissions ───────────────────────────────────────
+// DB_STUDENTS holds entries fetched from / pushed to Supabase.
+// They are kept separate from EXTRA_STUDENTS so we never duplicate.
+let DB_STUDENTS = [];
+
+// Is a submission timestamp within the last 48 hours?
+function isWithin48Hours(ts) {
+  if (!ts) return false;
+  return (Date.now() - new Date(ts).getTime()) < 48 * 60 * 60 * 1000;
+}
+
+// ── Moderation helpers ────────────────────────────────────────────────
+const _TEST_PATTERNS = /\b(test|testing|example|sample|asdf|qwerty|foo|bar|hello world|abc)\b/i;
+const _URL_PATTERN   = /https?:\/\/\S+|www\.\S+\.\S+/i;
+const _PHONE_SUSP    = /(\+?1[\s\-.]?)?(\(?\d{3}\)?[\s\-.]?\d{3}[\s\-.]?\d{4})/;
+const _DISPOSABLE_DOMAINS = [
+  'mailinator.com','guerrillamail.com','tempmail.com','throwam.com','yopmail.com',
+  'sharklasers.com','grr.la','spam4.me','trashmail.com','mailnull.com',
+  'maildrop.cc','dispostable.com','fakeinbox.com','trash-mail.com',
+];
+
+function isSuspicious(name, high_school, email) {
+  if (!name || name.trim().split(/\s+/).filter(Boolean).length < 2) return 'too_short_name';
+  if (_TEST_PATTERNS.test(name))                                     return 'test_pattern';
+  if (_URL_PATTERN.test(name) || _URL_PATTERN.test(high_school||''))return 'contains_url';
+  if (_PHONE_SUSP.test(name))                                        return 'contains_phone';
+  if (email) {
+    const domain = (email.split('@')[1] || '').toLowerCase();
+    if (_DISPOSABLE_DOMAINS.includes(domain))                        return 'disposable_email';
+  }
+  return null;
+}
+
+// ── Load approved submissions from Supabase ───────────────────────────
+async function loadApprovedSubmissions() {
+  if (!supabaseDB) return;
+  try {
+    const { data, error } = await supabaseDB
+      .from('submissions')
+      .select('id, name, high_school, yeshiva, status, created_at')
+      .eq('status', 'approved')
+      .order('created_at', { ascending: false });
+    if (error) { console.error('Supabase load error:', error); return; }
+    DB_STUDENTS = (data || []).map(row => ({
+      name:        row.name,
+      high_school: row.high_school || '',
+      yeshiva:     row.yeshiva,
+      phone:       '',
+      _added:      true,
+      _db:         true,
+      _dbId:       row.id,
+      _createdAt:  row.created_at,
+    }));
+    // Remove localStorage entries that are now in DB (dedup on reload)
+    EXTRA_STUDENTS = EXTRA_STUDENTS.filter(s => !s._db);
+    renderSearch($si.value);
+    if (yeshivotDone) { yeshivotDone = false; renderYeshivotGrid(); }
+    updateCounters();
+  } catch (err) {
+    console.error('Failed to load submissions:', err);
+  }
+}
+
+// ── Save a new submission to Supabase ─────────────────────────────────
+async function saveSubmissionToDB(name, high_school, yeshiva, email) {
+  if (!supabaseDB) return { status: 'local' };
+  const suspiciousReason = isSuspicious(name, high_school, email);
+  const status = suspiciousReason ? 'flagged' : 'approved';
+  try {
+    const { data, error } = await supabaseDB
+      .from('submissions')
+      .insert([{
+        name,
+        high_school: high_school || null,
+        yeshiva,
+        email: email || null,
+        status,
+        flagged_reason: suspiciousReason || null,
+      }])
+      .select()
+      .single();
+    if (error) { console.error('Supabase insert error:', error); return { status: 'error' }; }
+    return { status, data, flagged: !!suspiciousReason };
+  } catch (err) {
+    console.error('Supabase insert failed:', err);
+    return { status: 'error' };
+  }
+}
+
+// ── Subscribe to real-time approved entries ───────────────────────────
+function subscribeToSubmissions() {
+  if (!supabaseDB) return;
+  supabaseDB
+    .channel('public:submissions')
+    .on('postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'submissions' },
+      payload => {
+        const row = payload.new;
+        if (row.status !== 'approved') return;
+        if (DB_STUDENTS.some(s => s._dbId === row.id)) return; // dedup
+        const newStudent = {
+          name:        row.name,
+          high_school: row.high_school || '',
+          yeshiva:     row.yeshiva,
+          phone:       '',
+          _added:      true,
+          _db:         true,
+          _dbId:       row.id,
+          _createdAt:  row.created_at,
+          _realtime:   true,
+        };
+        DB_STUDENTS.unshift(newStudent);
+        renderSearch($si.value);
+        if (yeshivotDone) { yeshivotDone = false; renderYeshivotGrid(); }
+        renderStats(document.querySelector('.stats-tab.active')?.dataset.tab || 'yeshiva');
+        updateCounters();
+      })
+    .on('postgres_changes',
+      { event: 'UPDATE', schema: 'public', table: 'submissions' },
+      payload => {
+        const row = payload.new;
+        const idx = DB_STUDENTS.findIndex(s => s._dbId === row.id);
+        if (row.status === 'approved') {
+          if (idx === -1) {
+            DB_STUDENTS.unshift({
+              name: row.name, high_school: row.high_school || '', yeshiva: row.yeshiva,
+              phone: '', _added: true, _db: true, _dbId: row.id, _createdAt: row.created_at,
+            });
+          }
+        } else if (idx !== -1) {
+          DB_STUDENTS.splice(idx, 1);
+        }
+        renderSearch($si.value);
+        if (yeshivotDone) { yeshivotDone = false; renderYeshivotGrid(); }
+        updateCounters();
+      })
+    .subscribe();
+}
+
+// ── Confetti animation ────────────────────────────────────────────────
+function launchConfetti() {
+  const container = document.getElementById('confettiContainer');
+  if (!container) return;
+  container.innerHTML = '';
+  const colors = ['#b8975a','#f5c842','#3d6b4f','#4a90e2','#e74c3c','#9b59b6','#f39c12'];
+  for (let i = 0; i < 70; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    el.style.cssText = [
+      `left:${Math.random() * 100}%`,
+      `background:${colors[Math.floor(Math.random() * colors.length)]}`,
+      `animation-delay:${(Math.random() * 0.7).toFixed(2)}s`,
+      `width:${(6 + Math.random() * 7).toFixed(0)}px`,
+      `height:${(6 + Math.random() * 7).toFixed(0)}px`,
+      `border-radius:${Math.random() > 0.5 ? '50%' : '2px'}`,
+    ].join(';');
+    container.appendChild(el);
+  }
+  setTimeout(() => { container.innerHTML = ''; }, 3200);
+}
+
 // ── WhatsApp group links per yeshiva (from the corecert spreadsheet) ─
 const YESHIVA_WHATSAPP = {
   'Aish Gesher': 'https://chat.whatsapp.com/CP6KSsmEgbL3CvpVfwbhMN?mode=hqctcla',
@@ -1733,7 +1935,7 @@ function normalizeYeshivaName(name) {
 const SPAM_YESHIVOT = ['Yeshivat Milafafon Tzafon'];
 
 function getStudents() {
-  return [...BASE_STUDENTS, ...EXTRA_STUDENTS].filter(s => !SPAM_YESHIVOT.includes(s.yeshiva));
+  return [...BASE_STUDENTS, ...DB_STUDENTS, ...EXTRA_STUDENTS].filter(s => !SPAM_YESHIVOT.includes(s.yeshiva));
 }
 function getYeshivot() {
   const all = getStudents();
@@ -1874,7 +2076,8 @@ function renderSearch(q){
   res.forEach((s,i)=>{
     const li=document.createElement('li'); li.className='result-item'; li.style.animationDelay=(i*26)+'ms';
     const hs=normalizeHsName(s.high_school)||'—';
-    const badge = s._added ? '<span class="new-badge">NEW</span>' : '';
+    const badge = (s._added && (s._createdAt ? isWithin48Hours(s._createdAt) : true))
+      ? '<span class="new-badge">NEW</span>' : '';
     const dispYeshiva = normalizeYeshivaName(s.yeshiva);
     li.innerHTML=`
       <div>
@@ -2214,6 +2417,7 @@ function openAddModal(mode, prefillName){
   addModalMode = mode;
   const modal = document.getElementById('addModal');
   const title = document.getElementById('addModalTitle');
+  const subEl  = document.getElementById('addModalSub');
   const studentFields = document.getElementById('addStudentFields');
   const yeshivaFields = document.getElementById('addYeshivaFields');
 
@@ -2221,6 +2425,7 @@ function openAddModal(mode, prefillName){
 
   if(mode === 'student'){
     title.textContent = 'Add Yourself';
+    if(subEl) subEl.textContent = supabaseDB ? 'Your entry will be visible to everyone' : 'Session-local \u00B7 visible to you this visit';
     studentFields.style.display = 'block';
     yeshivaFields.style.display = 'none';
     if(prefillName) document.getElementById('addName').value = prefillName;
@@ -2235,10 +2440,23 @@ function openAddModal(mode, prefillName){
     initHsAutocomplete();
   } else {
     title.textContent = 'Add New Yeshiva';
+    if(subEl) subEl.textContent = '';
     studentFields.style.display = 'none';
     yeshivaFields.style.display = 'block';
   }
   
+  // Update footer note based on whether Supabase is configured
+  const footerNote = document.getElementById('addFooterNote');
+  if(footerNote){
+    if(supabaseDB){
+      footerNote.textContent = 'Entries are reviewed before going live';
+      footerNote.className = 'add-footer-note';
+    } else {
+      footerNote.textContent = 'Added entries are saved for this browser session only';
+      footerNote.className = 'add-footer-note warning';
+    }
+  }
+
   document.getElementById('addSuccess').style.display = 'none';
   document.getElementById('addForm').style.display = 'block';
   modal.classList.add('open');
@@ -2281,7 +2499,7 @@ function validatePhone(phone) {
   return '';
 }
 
-function submitAdd(){
+async function submitAdd(){
   clearAddFormErrors();
   let hasError = false;
 
@@ -2338,17 +2556,52 @@ function submitAdd(){
     }
     document.getElementById('addError').style.display='none';
     const finalName = toTitleCase(name);
-    const newStudent = {name:finalName,high_school:hs,phone,yeshiva,_added:true};
-    EXTRA_STUDENTS.push(newStudent);
-    localStorage.setItem('extra_students', JSON.stringify(EXTRA_STUDENTS));
-    // Refresh views + counters (FIX 4/12) before showing success
-    yeshivotDone = false;
-    renderYeshivotGrid();
-    renderHsGrid();
-    renderStats(document.querySelector('.stats-tab.active')?.dataset.tab || 'yeshiva');
-    updateCounters();
-    refreshOverlayIfOpen(yeshiva);
-    showAddSuccess('student', finalName, normalizeYeshivaName(yeshiva));
+
+    const submitBtn = document.getElementById('addSubmitBtn');
+    if(supabaseDB){
+      // Disable button during async save to prevent double-submission
+      if(submitBtn){ submitBtn.disabled = true; submitBtn.textContent = 'Saving\u2026'; }
+      const result = await saveSubmissionToDB(finalName, hs, yeshiva, '');
+      if(submitBtn){ submitBtn.disabled = false; submitBtn.textContent = 'Add to Directory \u2192'; }
+
+      if(result.status === 'error'){
+        // DB failed — fall back to local save so the user isn't left empty-handed
+        document.getElementById('addError').textContent = 'Could not reach the database. Your entry was saved locally.';
+        document.getElementById('addError').style.display='block';
+        const newStudent = {name:finalName,high_school:hs,phone,yeshiva,_added:true};
+        EXTRA_STUDENTS.push(newStudent);
+        localStorage.setItem('extra_students', JSON.stringify(EXTRA_STUDENTS));
+      } else if(result.status === 'approved' && result.data){
+        // Optimistically add to DB_STUDENTS so it shows immediately
+        // (realtime subscription will also fire but the dedup guard handles it)
+        if(!DB_STUDENTS.some(s => s._dbId === result.data.id)){
+          DB_STUDENTS.unshift({
+            name: finalName, high_school: hs, yeshiva, phone: '',
+            _added: true, _db: true, _dbId: result.data.id, _createdAt: result.data.created_at,
+          });
+        }
+      }
+      // Refresh views + counters
+      yeshivotDone = false;
+      renderYeshivotGrid();
+      renderHsGrid();
+      renderStats(document.querySelector('.stats-tab.active')?.dataset.tab || 'yeshiva');
+      updateCounters();
+      refreshOverlayIfOpen(yeshiva);
+      showAddSuccess('student', finalName, normalizeYeshivaName(yeshiva), result.flagged || false);
+    } else {
+      // No Supabase configured — local-only fallback
+      const newStudent = {name:finalName,high_school:hs,phone,yeshiva,_added:true};
+      EXTRA_STUDENTS.push(newStudent);
+      localStorage.setItem('extra_students', JSON.stringify(EXTRA_STUDENTS));
+      yeshivotDone = false;
+      renderYeshivotGrid();
+      renderHsGrid();
+      renderStats(document.querySelector('.stats-tab.active')?.dataset.tab || 'yeshiva');
+      updateCounters();
+      refreshOverlayIfOpen(yeshiva);
+      showAddSuccess('student', finalName, normalizeYeshivaName(yeshiva), false);
+    }
   } else {
     const name = document.getElementById('addYeshivaName').value.trim();
     if(!name){ shakeField('addYeshivaName'); return; }
@@ -2373,17 +2626,34 @@ function submitAdd(){
     renderHsGrid();
     renderStats(document.querySelector('.stats-tab.active')?.dataset.tab || 'yeshiva');
     updateCounters();
-    showAddSuccess('yeshiva', name, '');
+    showAddSuccess('yeshiva', name, '', false);
   }
 }
 
-function showAddSuccess(type, name, yeshiva){
+function showAddSuccess(type, name, yeshiva, flagged){
   document.getElementById('addForm').style.display='none';
   const succ = document.getElementById('addSuccess');
   succ.style.display='block';
-  succ.innerHTML = type==='student'
-    ? `<div class="success-icon">&#10003;</div><div class="success-title">You're in!</div><div class="success-sub">Added <strong>${esc(name)}</strong> to <strong>${esc(yeshiva)}</strong></div><button class="modal-done-btn" onclick="closeAddModal()">Done</button>`
-    : `<div class="success-icon">&#10003;</div><div class="success-title">Yeshiva Added!</div><div class="success-sub"><strong>${esc(name)}</strong> is now in the directory</div><button class="modal-done-btn" onclick="closeAddModal()">Done</button>`;
+  if(type==='student'){
+    if(flagged){
+      succ.innerHTML = `<div class="success-anim pending"><div class="success-pending-icon">&#8987;</div></div>
+        <div class="success-title">Submitted!</div>
+        <div class="success-sub">You&rsquo;ll appear in the directory once your entry is approved.</div>
+        <button class="modal-done-btn" onclick="closeAddModal()">Done</button>`;
+    } else {
+      succ.innerHTML = `<div class="success-anim"><div class="success-checkmark">&#10003;</div></div>
+        <div class="success-title">You&rsquo;re in!</div>
+        <div class="success-sub">Your entry is now live in the directory for everyone to see.</div>
+        <button class="modal-done-btn" onclick="closeAddModal()">Done</button>`;
+      launchConfetti();
+    }
+  } else {
+    succ.innerHTML = `<div class="success-anim"><div class="success-checkmark">&#10003;</div></div>
+      <div class="success-title">Yeshiva Added!</div>
+      <div class="success-sub"><strong>${esc(name)}</strong> is now in the directory.</div>
+      <button class="modal-done-btn" onclick="closeAddModal()">Done</button>`;
+    launchConfetti();
+  }
 }
 
 function shakeField(id){
@@ -2436,6 +2706,8 @@ const skeletonList = document.getElementById('skeletonList');
 if(skeletonList) skeletonList.style.display='none';
 // FIX 4/12: update counters on load
 updateCounters();
+// Supabase: load persisted approved entries, then start real-time listener
+loadApprovedSubmissions().then(() => subscribeToSubmissions());
 </script>
 
 <!-- ═══ ADD MODAL BACKDROP ═══ -->
@@ -2443,10 +2715,11 @@ updateCounters();
 
 <!-- ═══ ADD MODAL ═══ -->
 <div class="add-modal" id="addModal">
+  <div id="confettiContainer" class="confetti-container"></div>
   <div class="add-modal-header">
     <div>
       <div class="add-modal-title" id="addModalTitle">Add Yourself</div>
-      <div class="add-modal-sub">Session-local · visible to you this visit</div>
+      <div class="add-modal-sub" id="addModalSub">Your entry will be visible to everyone</div>
     </div>
     <button class="modal-close" onclick="closeAddModal()">&times;</button>
   </div>
@@ -2498,8 +2771,8 @@ updateCounters();
         </div>
       </div>
       <div class="add-error" id="addError"></div>
-      <button class="add-submit-btn" onclick="submitAdd()">Add to My Session &rarr;</button>
-      <p class="add-footer-note warning">Added entries are saved for this browser session only</p>
+      <button class="add-submit-btn" id="addSubmitBtn" onclick="submitAdd()">Add to Directory &rarr;</button>
+      <p class="add-footer-note" id="addFooterNote">Entries are reviewed before going live</p>
     </div>
     <div class="add-success" id="addSuccess"></div>
   </div>
