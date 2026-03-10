@@ -756,6 +756,46 @@ mark {
   .add-self-fab-label { display: none; }
 }
 
+/* ── STUDENT NAME (FIX 6) ── */
+.student-name { text-transform: capitalize; }
+
+/* ── FIELD ERROR (FIX 11) ── */
+.field-error {
+  font-size: 0.75rem; color: #c0392b;
+  margin-top: 4px; display: none;
+}
+.field-input.invalid, .field-select.invalid { border-bottom-color: #c0392b; }
+
+/* ── HS HINT (FIX 8) ── */
+.hs-hint { font-size: 0.72rem; color: var(--gray); margin-top: 4px; display: none; }
+
+/* ── SKELETON (FIX 15) ── */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.skeleton {
+  background: #e8e0d0;
+  border-radius: 4px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+.skeleton-row { height: 72px; margin-bottom: 2px; width: 100%; }
+.skeleton-card { height: 140px; }
+.skeleton-input { height: 46px; max-width: 580px; margin-bottom: 24px; }
+.skeleton-list { list-style: none; }
+
+/* ── BADGE NEW (FIX 19) ── */
+.badge-new {
+  font-size: 0.6rem;
+  background: #2ecc71;
+  color: white;
+  padding: 2px 5px;
+  border-radius: 3px;
+  vertical-align: middle;
+  margin-left: 6px;
+  letter-spacing: 0.05em;
+}
+
 </style>
 </head>
 <body>
@@ -771,7 +811,7 @@ mark {
     <button class="nav-btn"        id="navHs"        onclick="switchView('Hs')">High Schools</button>
     <button class="nav-btn"        id="navStats"     onclick="switchView('Stats')">Stats</button>
   </nav>
-  <span class="header-pill">526 students &middot; 29 yeshivot</span>
+  <span class="header-pill" id="headerPill">526 students &middot; 29 yeshivot</span>
 </header>
 
 <!-- ═══ SEARCH VIEW ═══ -->
@@ -790,24 +830,30 @@ mark {
     <div id="statePrompt">
       <div class="quick-stats">
         <div class="qs-item" onclick="switchView('Yeshivot')" style="cursor:none;padding-left:24px">
-          <div class="qs-num">526</div>
+          <div class="qs-num" id="qsStudents">526</div>
           <div class="qs-label">Students</div>
         </div>
         <div class="qs-item" onclick="switchView('Yeshivot')" style="cursor:none;padding-left:24px">
-          <div class="qs-num">29</div>
+          <div class="qs-num" id="qsYeshivot">29</div>
           <div class="qs-label">Yeshivot</div>
         </div>
         <div class="qs-item" onclick="switchView('Hs')" style="cursor:none;padding-left:24px">
-          <div class="qs-num">156</div>
+          <div class="qs-num" id="qsHs">156</div>
           <div class="qs-label">High Schools</div>
         </div>
         <div class="qs-item" style="cursor:none;padding-left:24px">
-          <div class="qs-num">410</div>
+          <div class="qs-num" id="qsPhones">410</div>
           <div class="qs-label">Phone Numbers</div>
         </div>
       </div>
       <p class="state-prompt">Start typing to find someone</p>
     </div>
+    <ul class="skeleton-list" id="skeletonList">
+      <li class="skeleton skeleton-row"></li>
+      <li class="skeleton skeleton-row"></li>
+      <li class="skeleton skeleton-row"></li>
+      <li class="skeleton skeleton-row"></li>
+    </ul>
     <ul class="results-list" id="resultsList"></ul>
   </div>
 </div>
@@ -818,9 +864,16 @@ mark {
     <div>
       <h2 class="yeshivot-title">All <em>Yeshivot</em></h2>
     </div>
-    <span class="yeshivot-sub">29 programs &mdash; click any to explore &mdash; select multiple to compare</span>
+    <span class="yeshivot-sub" id="yeshivotSub">29 programs &mdash; click any to explore &mdash; select multiple to compare</span>
   </div>
-  <div class="yeshivot-grid" id="yeshivotGrid"></div>
+  <div class="yeshivot-grid" id="yeshivotGrid">
+    <div class="skeleton skeleton-card"></div>
+    <div class="skeleton skeleton-card"></div>
+    <div class="skeleton skeleton-card"></div>
+    <div class="skeleton skeleton-card"></div>
+    <div class="skeleton skeleton-card"></div>
+    <div class="skeleton skeleton-card"></div>
+  </div>
 </div>
 
 <!-- ═══ HIGH SCHOOLS VIEW ═══ -->
@@ -915,8 +968,16 @@ function normalizeHsName(name) {
   return HS_ALIASES[key] || name.trim();
 }
 
+// ── FIX 19: strip "NEW " prefix from yeshiva names for display ───────
+function normalizeYeshivaName(name) {
+  return (name || '').replace(/^NEW\s+/i, '').trim();
+}
+
+// ── FIX 1: spam yeshiva filter ────────────────────────────────────────
+const SPAM_YESHIVOT = ['Yeshivat Milafafon Tzafon'];
+
 function getStudents() {
-  return [...BASE_STUDENTS, ...EXTRA_STUDENTS];
+  return [...BASE_STUDENTS, ...EXTRA_STUDENTS].filter(s => !SPAM_YESHIVOT.includes(s.yeshiva));
 }
 function getYeshivot() {
   const all = getStudents();
@@ -936,7 +997,48 @@ function getHsList() {
   return Object.entries(counts).sort((a,b)=>b[1]-a[1]);
 }
 
-const MAX_RES = 40;
+// ── FIX 4/12: update all reactive counters ────────────────────────────
+function updateCounters() {
+  const students = getStudents();
+  const yeshivot = getYeshivot();
+  const hsList = getHsList();
+  const count = students.length;
+  const yCount = yeshivot.length;
+  const hsCount = hsList.length;
+  const phoneCount = students.filter(s=>s.phone).length;
+  const pill = document.getElementById('headerPill');
+  if(pill) pill.textContent = count + ' students \u00B7 ' + yCount + ' yeshivot';
+  const footer = document.getElementById('footerRight');
+  if(footer) footer.textContent = count + ' students \u00B7 ' + yCount + ' yeshivot';
+  const qsStudents = document.getElementById('qsStudents');
+  if(qsStudents) qsStudents.textContent = count;
+  const qsYeshivot = document.getElementById('qsYeshivot');
+  if(qsYeshivot) qsYeshivot.textContent = yCount;
+  const qsHs = document.getElementById('qsHs');
+  if(qsHs) qsHs.textContent = hsCount;
+  const qsPhones = document.getElementById('qsPhones');
+  if(qsPhones) qsPhones.textContent = phoneCount;
+  const yeshivotSub = document.getElementById('yeshivotSub');
+  if(yeshivotSub) yeshivotSub.textContent = yCount + ' programs \u2014 click any to explore \u2014 select multiple to compare';
+}
+
+// ── FIX 8: build HS datalist from known schools (2+ appearances) ──────
+let _knownHsLower = [];
+function populateHsDatalist() {
+  const dl = document.getElementById('hsDatalist');
+  if(!dl) return;
+  dl.innerHTML = '';
+  const hsList = getHsList();
+  const filtered = hsList.filter(([_name, count])=>count>=2).sort((a,b)=>a[0].localeCompare(b[0]));
+  _knownHsLower = filtered.map(([name])=>name.toLowerCase());
+  filtered.forEach(([name])=>{
+    const opt = document.createElement('option');
+    opt.value = name;
+    dl.appendChild(opt);
+  });
+}
+
+
 
 // ── Cursor ────────────────────────────────────────────────────────────
 const cur = document.getElementById('cursor');
@@ -992,6 +1094,7 @@ function score(query,student){
   }
   return total/qs.length;
 }
+const MAX_RES = 40;
 function doSearch(q){ if(!q.trim())return[]; const r=[]; for(const s of getStudents()){const sc=score(q,s);if(sc>18)r.push({...s,sc});} return r.sort((a,b)=>b.sc-a.sc).slice(0,MAX_RES); }
 
 // ── Highlight ────────────────────────────────────────────────────────
@@ -1029,13 +1132,14 @@ function renderSearch(q){
     const li=document.createElement('li'); li.className='result-item'; li.style.animationDelay=(i*26)+'ms';
     const hs=normalizeHsName(s.high_school)||'—';
     const badge = s._added ? '<span class="new-badge">NEW</span>' : '';
+    const dispYeshiva = normalizeYeshivaName(s.yeshiva);
     li.innerHTML=`
       <div>
-        <div class="result-name">${hl(s.name,q)} ${badge}</div>
+        <div class="result-name"><span class="student-name">${hl(s.name,q)}</span> ${badge}</div>
         <div class="result-path">
           <span class="tag tag-hs" onclick="openHsOverlay('${esc(normalizeHsName(s.high_school)||'')}')">${esc(hs)}</span>
           <span class="result-arrow">&#8594;</span>
-          <span class="tag tag-yeshiva" onclick="openOverlay('yeshiva','${esc(s.yeshiva)}')">${esc(s.yeshiva)}</span>
+          <span class="tag tag-yeshiva" onclick="openOverlay('yeshiva','${esc(s.yeshiva)}')">${esc(dispYeshiva)}</span>
         </div>
       </div>
       <div class="result-phone">${esc(s.phone)||''}</div>`;
@@ -1055,7 +1159,10 @@ function renderYeshivotGrid(){
     card.dataset.yeshiva=name;
     const pct=(count/max*100).toFixed(1);
     const isExtra = EXTRA_YESHIVOT.includes(name);
-    card.innerHTML=`<div class="yc-count">${count}</div><div class="yc-name">${esc(name)}${isExtra?'<span class="new-badge" style="margin-left:8px;vertical-align:middle">NEW</span>':''}</div><div class="yc-sub">${count===1?'1 student':count+' students'}</div><div class="yc-bar" style="width:0%"></div>`;
+    const hasNewPrefix = /^NEW\s+/i.test(name);
+    const dispName = normalizeYeshivaName(name);
+    const newBadge = (isExtra || hasNewPrefix) ? `<span class="${hasNewPrefix ? 'badge-new' : 'new-badge'}" style="margin-left:8px;vertical-align:middle">NEW</span>` : '';
+    card.innerHTML=`<div class="yc-count">${count}</div><div class="yc-name">${esc(dispName)}${newBadge}</div><div class="yc-sub">${count===1?'1 student':count+' students'}</div><div class="yc-bar" style="width:0%"></div>`;
     card.addEventListener('click', e=>{
       if(e.shiftKey||e.ctrlKey||e.metaKey) toggleCompare(name,card);
       else openOverlay('yeshiva',name);
@@ -1091,8 +1198,9 @@ function renderStats(tab){
   const max=list[0][1];
   list.forEach(([name,count])=>{
     const pct=(count/max*100).toFixed(1);
+    const dispName = tab==='yeshiva' ? normalizeYeshivaName(name) : name;
     const row=document.createElement('div'); row.className='bar-row';
-    row.innerHTML=`<span class="bar-label">${esc(name)}</span><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div><span class="bar-num">${count}</span>`;
+    row.innerHTML=`<span class="bar-label">${esc(dispName)}</span><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div><span class="bar-num">${count}</span>`;
     row.addEventListener('click',()=>tab==='yeshiva'?openOverlay('yeshiva',name):openHsOverlay(name));
     chart.appendChild(row);
   });
@@ -1104,13 +1212,14 @@ function showStatTab(tab,btn){
 }
 
 // ── Overlay ──────────────────────────────────────────────────────────
-let overlayStudents=[],overlaySort='alpha',overlaySchoolFilter=null;
+let overlayStudents=[],overlaySort='alpha',overlaySchoolFilter=null,overlayYeshivaName=null;
 
 function openOverlay(type,name){
+  overlayYeshivaName = name;
   overlayStudents=getStudents().filter(s=>s.yeshiva===name);
   overlaySort='alpha'; overlaySchoolFilter=null;
   document.getElementById('overlayEyebrow').textContent='Yeshiva';
-  document.getElementById('overlayTitle').textContent=name;
+  document.getElementById('overlayTitle').textContent=normalizeYeshivaName(name);
   document.getElementById('overlayMeta').textContent=overlayStudents.length+(overlayStudents.length===1?' student enrolled':' students enrolled');
   document.getElementById('overlaySearch').value='';
   document.querySelectorAll('.sort-btn').forEach((b,i)=>b.classList.toggle('active',i===0));
@@ -1120,6 +1229,13 @@ function openOverlay(type,name){
   document.getElementById('overlay').classList.add('open');
   document.body.style.overflow='hidden';
   document.getElementById('overlaySearch').oninput=()=>renderOverlayList(overlayStudents,document.getElementById('overlaySearch').value);
+}
+
+function refreshOverlayIfOpen(yeshivaName) {
+  const overlay = document.getElementById('overlay');
+  if(overlay.classList.contains('open') && overlayYeshivaName === yeshivaName) {
+    openOverlay('yeshiva', yeshivaName);
+  }
 }
 
 function openHsOverlay(hs){
@@ -1144,7 +1260,7 @@ function buildSchoolChips(students,field){
   const counts={};
   students.forEach(s=>{
     if(s[field]){
-      const val = field==='high_school' ? normalizeHsName(s[field]) : s[field];
+      const val = field==='high_school' ? normalizeHsName(s[field]) : normalizeYeshivaName(s[field]);
       counts[val]=(counts[val]||0)+1;
     }
   });
@@ -1191,7 +1307,7 @@ function setSort(s,btn){
 function renderOverlayList(students,query){
   const list=document.getElementById('overlayList'); list.innerHTML='';
   let filtered=[...students];
-  if(overlaySchoolFilter) filtered=filtered.filter(s=>s.yeshiva===overlaySchoolFilter||normalizeHsName(s.high_school)===overlaySchoolFilter);
+  if(overlaySchoolFilter) filtered=filtered.filter(s=>normalizeYeshivaName(s.yeshiva)===overlaySchoolFilter||normalizeHsName(s.high_school)===overlaySchoolFilter);
   if(query.trim()){
     const q=norm(query);
     filtered=filtered.filter(s=>norm(s.name).includes(q)||norm(s.high_school).includes(q));
@@ -1205,7 +1321,7 @@ function renderOverlayList(students,query){
   filtered.forEach((s,i)=>{
     const li=document.createElement('li'); li.className='overlay-item'; li.style.animationDelay=(i*16)+'ms';
     const badge=s._added?'<span class="new-badge">NEW</span>':'';
-    li.innerHTML=`<span class="oi-name">${esc(s.name)} ${badge}</span><span class="oi-hs">${esc(normalizeHsName(s.high_school)||'—')}</span><span class="oi-phone">${esc(s.phone||'')}</span>`;
+    li.innerHTML=`<span class="oi-name student-name">${esc(s.name)} ${badge}</span><span class="oi-hs">${esc(normalizeHsName(s.high_school)||'—')}</span><span class="oi-phone">${esc(s.phone||'')}</span>`;
     list.appendChild(li);
   });
 }
@@ -1244,7 +1360,7 @@ function openCompare(){
     return {name:n,students:sts};
   });
   const maxLen=Math.max(...groups.map(g=>g.students.length));
-  document.getElementById('coSubTitle').textContent=names.join(' vs ');
+  document.getElementById('coSubTitle').textContent=names.map(n=>normalizeYeshivaName(n)).join(' vs ');
   const cols=names.length;
   const content=document.getElementById('compareContent'); content.innerHTML='';
   const schoolSets=groups.map(g=>new Set(g.students.map(s=>s.high_school).filter(Boolean)));
@@ -1253,7 +1369,7 @@ function openCompare(){
   headGrid.style.gridTemplateColumns=`repeat(${cols},1fr)`;
   groups.forEach(g=>{
     const h=document.createElement('div'); h.className='col-head';
-    h.innerHTML=`<div class="col-head-name">${esc(g.name)}</div><div class="col-head-num">${g.students.length} students</div>`;
+    h.innerHTML=`<div class="col-head-name">${esc(normalizeYeshivaName(g.name))}</div><div class="col-head-num">${g.students.length} students</div>`;
     headGrid.appendChild(h);
   });
   content.appendChild(headGrid);
@@ -1264,7 +1380,7 @@ function openCompare(){
     groups.forEach((_,gi)=>{
       const s=sorted[gi][i];
       const cell=document.createElement('div'); cell.className='compare-cell';
-      if(s) cell.innerHTML=`${esc(s.name)}<div class="cc-hs">${esc(s.high_school||'')}</div>${s.phone?`<div class="cc-phone">${esc(s.phone)}</div>`:''}`; 
+      if(s) cell.innerHTML=`<span class="student-name">${esc(s.name)}</span><div class="cc-hs">${esc(s.high_school||'')}</div>${s.phone?`<div class="cc-phone">${esc(s.phone)}</div>`:''}`; 
       else cell.innerHTML='<span style="color:var(--line)">&mdash;</span>';
       row.appendChild(cell);
     });
@@ -1285,28 +1401,81 @@ function closeCompare(){
 
 // ── ADD MODAL ────────────────────────────────────────────────────────
 let addModalMode = 'student';
+
+function clearAddFormErrors() {
+  ['addNameError','addPhoneError','addYeshivaError','addYeshivaNewError'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el){ el.textContent=''; el.style.display='none'; }
+  });
+  ['addName','addPhone','addYeshivaSelect','addYeshivaNew'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.classList.remove('invalid');
+  });
+  const err = document.getElementById('addError');
+  if(err){ err.textContent=''; err.style.display='none'; }
+}
+
+function showFieldError(fieldId, errorId, msg) {
+  const field = document.getElementById(fieldId);
+  const errEl = document.getElementById(errorId);
+  if(field){ field.classList.add('invalid'); shakeField(fieldId); }
+  if(errEl){ errEl.textContent=msg; errEl.style.display='block'; }
+}
+
+function resetAddForm() {
+  clearAddFormErrors();
+  const nameEl = document.getElementById('addName');
+  if(nameEl) nameEl.value = '';
+  const hsEl = document.getElementById('addHs');
+  if(hsEl) hsEl.value = '';
+  const phoneEl = document.getElementById('addPhone');
+  if(phoneEl) phoneEl.value = '';
+  const sel = document.getElementById('addYeshivaSelect');
+  if(sel) sel.selectedIndex = 0;
+  const newWrap = document.getElementById('addYeshivaNewWrap');
+  if(newWrap) newWrap.style.display = 'none';
+  const newInput = document.getElementById('addYeshivaNew');
+  if(newInput) newInput.value = '';
+  const yeshivaNameInput = document.getElementById('addYeshivaName');
+  if(yeshivaNameInput) yeshivaNameInput.value = '';
+  const hint = document.getElementById('addHsHint');
+  if(hint) hint.style.display = 'none';
+}
+
 function openAddModal(mode, prefillName){
   addModalMode = mode;
   const modal = document.getElementById('addModal');
   const title = document.getElementById('addModalTitle');
   const studentFields = document.getElementById('addStudentFields');
   const yeshivaFields = document.getElementById('addYeshivaFields');
-  
+
+  resetAddForm();
+
   if(mode === 'student'){
     title.textContent = 'Add Yourself';
     studentFields.style.display = 'block';
     yeshivaFields.style.display = 'none';
     if(prefillName) document.getElementById('addName').value = prefillName;
-    // Populate yeshiva dropdown
+    // FIX 1: Populate yeshiva dropdown with disabled placeholder first
     const sel = document.getElementById('addYeshivaSelect');
     sel.innerHTML = '';
+    const placeholder = document.createElement('option');
+    placeholder.value = ''; placeholder.textContent = '\u2014 Select your yeshiva \u2014';
+    placeholder.disabled = true; placeholder.selected = true;
+    sel.appendChild(placeholder);
     getYeshivot().forEach(([y])=>{
-      const opt = document.createElement('option'); opt.value=y; opt.textContent=y; sel.appendChild(opt);
+      const opt = document.createElement('option');
+      opt.value = y;
+      opt.textContent = normalizeYeshivaName(y);
+      sel.appendChild(opt);
     });
     const otherOpt = document.createElement('option'); otherOpt.value='__new__'; otherOpt.textContent='+ Add new yeshiva...'; sel.appendChild(otherOpt);
     sel.onchange = ()=>{
+      clearAddFormErrors();
       document.getElementById('addYeshivaNewWrap').style.display = sel.value==='__new__' ? 'block' : 'none';
     };
+    // FIX 8: populate HS datalist
+    populateHsDatalist();
   } else {
     title.textContent = 'Add New Yeshiva';
     studentFields.style.display = 'none';
@@ -1324,24 +1493,79 @@ function closeAddModal(){
   document.getElementById('addModal').classList.remove('open');
   document.getElementById('addModalBackdrop').classList.remove('open');
   document.body.style.overflow='';
+  resetAddForm();
+}
+
+// FIX 2: title-case helper
+function toTitleCase(str) {
+  return str.replace(/\S+/g, word => {
+    // Preserve short all-uppercase words (e.g. 'II', 'III', 'Jr.')
+    if(/^[A-Z]{1,3}\.?$/.test(word)) return word;
+    return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+  });
+}
+
+// FIX 2: name validation
+function validateName(name) {
+  if(!name) return 'Full name is required.';
+  if(name.length < 4 || name.trim().split(/\s+/).filter(Boolean).length < 2)
+    return 'Please enter your first and last name.';
+  if(/[0-9]/.test(name) || /[^a-zA-Z\u00C0-\u017F\s\-'.]/.test(name))
+    return 'Name cannot contain numbers or symbols.';
+  return '';
+}
+
+// FIX 3: phone validation
+function validatePhone(phone) {
+  if(!phone.trim()) return '';
+  const digits = phone.replace(/\D/g,'');
+  if(digits.length < 7 || digits.length > 15) return 'Please enter a valid phone number.';
+  if(/[^0-9\s\-\(\)\+]/.test(phone)) return 'Please enter a valid phone number.';
+  return '';
 }
 
 function submitAdd(){
+  clearAddFormErrors();
+  let hasError = false;
+
   if(addModalMode === 'student'){
     const name = document.getElementById('addName').value.trim();
     const hs = normalizeHsName(document.getElementById('addHs').value.trim());
     const phone = document.getElementById('addPhone').value.trim();
     let yeshiva = document.getElementById('addYeshivaSelect').value;
+
+    // FIX 2: validate name
+    const nameErr = validateName(name);
+    if(nameErr){ showFieldError('addName','addNameError',nameErr); hasError=true; }
+
+    // FIX 3: validate phone (optional)
+    const phoneErr = validatePhone(phone);
+    if(phoneErr){ showFieldError('addPhone','addPhoneError',phoneErr); hasError=true; }
+
+    // FIX 1: validate yeshiva selection
+    if(!yeshiva){
+      showFieldError('addYeshivaSelect','addYeshivaError','Please select your yeshiva.');
+      hasError=true;
+    } else if(yeshiva === '__new__'){
+      const newYeshiva = document.getElementById('addYeshivaNew').value.trim();
+      // FIX 14: validate new yeshiva name
+      if(!newYeshiva || newYeshiva.length < 3){
+        showFieldError('addYeshivaNew','addYeshivaNewError','Please enter the name of your yeshiva.');
+        hasError=true;
+      }
+    }
+
+    if(hasError) return;
+
+    // FIX 14: handle new yeshiva
     if(yeshiva === '__new__'){
       yeshiva = document.getElementById('addYeshivaNew').value.trim();
-      if(!yeshiva){ shakeField('addYeshivaNew'); return; }
       if(!EXTRA_YESHIVOT.includes(yeshiva)){
         EXTRA_YESHIVOT.push(yeshiva);
         localStorage.setItem('extra_yeshivot', JSON.stringify(EXTRA_YESHIVOT));
       }
     }
-    if(!name){ shakeField('addName'); return; }
-    if(!yeshiva){ shakeField('addYeshivaSelect'); return; }
+
     // Check duplicate
     const dup = getStudents().find(s=>norm(s.name)===norm(name) && s.yeshiva===yeshiva);
     if(dup){
@@ -1350,10 +1574,18 @@ function submitAdd(){
       return;
     }
     document.getElementById('addError').style.display='none';
-    const newStudent = {name,high_school:hs,phone,yeshiva,_added:true};
+    const finalName = toTitleCase(name);
+    const newStudent = {name:finalName,high_school:hs,phone,yeshiva,_added:true};
     EXTRA_STUDENTS.push(newStudent);
     localStorage.setItem('extra_students', JSON.stringify(EXTRA_STUDENTS));
-    showAddSuccess('student', name, yeshiva);
+    // Refresh views + counters (FIX 4/12) before showing success
+    yeshivotDone = false;
+    renderYeshivotGrid();
+    renderHsGrid();
+    renderStats(document.querySelector('.stats-tab.active')?.dataset.tab || 'yeshiva');
+    updateCounters();
+    refreshOverlayIfOpen(yeshiva);
+    showAddSuccess('student', finalName, normalizeYeshivaName(yeshiva));
   } else {
     const name = document.getElementById('addYeshivaName').value.trim();
     if(!name){ shakeField('addYeshivaName'); return; }
@@ -1372,13 +1604,14 @@ function submitAdd(){
     const placeholder = {name:'(No students yet)',high_school:'',phone:'',yeshiva:name,_added:true,_placeholder:true};
     EXTRA_STUDENTS.push(placeholder);
     localStorage.setItem('extra_students', JSON.stringify(EXTRA_STUDENTS));
+    // Refresh views + counters (FIX 4/12)
+    yeshivotDone = false;
+    renderYeshivotGrid();
+    renderHsGrid();
+    renderStats(document.querySelector('.stats-tab.active')?.dataset.tab || 'yeshiva');
+    updateCounters();
     showAddSuccess('yeshiva', name, '');
   }
-  // Refresh views
-  yeshivotDone = false;
-  renderYeshivotGrid();
-  renderHsGrid();
-  renderStats(document.querySelector('.stats-tab.active')?.dataset.tab || 'yeshiva');
 }
 
 function showAddSuccess(type, name, yeshiva){
@@ -1386,17 +1619,54 @@ function showAddSuccess(type, name, yeshiva){
   const succ = document.getElementById('addSuccess');
   succ.style.display='block';
   succ.innerHTML = type==='student'
-    ? `<div class="success-icon">✓</div><div class="success-title">You're in!</div><div class="success-sub">Added <strong>${esc(name)}</strong> to <strong>${esc(yeshiva)}</strong></div><button class="modal-done-btn" onclick="closeAddModal()">Done</button>`
-    : `<div class="success-icon">✓</div><div class="success-title">Yeshiva Added!</div><div class="success-sub"><strong>${esc(name)}</strong> is now in the directory</div><button class="modal-done-btn" onclick="closeAddModal()">Done</button>`;
+    ? `<div class="success-icon">&#10003;</div><div class="success-title">You're in!</div><div class="success-sub">Added <strong>${esc(name)}</strong> to <strong>${esc(yeshiva)}</strong></div><button class="modal-done-btn" onclick="closeAddModal()">Done</button>`
+    : `<div class="success-icon">&#10003;</div><div class="success-title">Yeshiva Added!</div><div class="success-sub"><strong>${esc(name)}</strong> is now in the directory</div><button class="modal-done-btn" onclick="closeAddModal()">Done</button>`;
 }
 
 function shakeField(id){
   const el = document.getElementById(id);
+  if(!el) return;
   el.classList.remove('shake');
   void el.offsetWidth;
   el.classList.add('shake');
   el.focus();
 }
+
+// FIX 2/6: title-case name on blur
+document.addEventListener('DOMContentLoaded', ()=>{
+  const nameInput = document.getElementById('addName');
+  if(nameInput){
+    nameInput.addEventListener('blur', ()=>{
+      if(nameInput.value.trim()) nameInput.value = toTitleCase(nameInput.value.trim());
+    });
+    nameInput.addEventListener('input', ()=>{
+      const errEl = document.getElementById('addNameError');
+      if(errEl){ errEl.style.display='none'; }
+      nameInput.classList.remove('invalid');
+    });
+  }
+  const phoneInput = document.getElementById('addPhone');
+  if(phoneInput){
+    phoneInput.addEventListener('input', ()=>{
+      const errEl = document.getElementById('addPhoneError');
+      if(errEl){ errEl.style.display='none'; }
+      phoneInput.classList.remove('invalid');
+    });
+  }
+  // FIX 8: HS hint on blur/input (uses cached _knownHsLower for performance)
+  const hsInput = document.getElementById('addHs');
+  if(hsInput){
+    const checkHsHint = ()=>{
+      const val = hsInput.value.trim();
+      const hint = document.getElementById('addHsHint');
+      if(!hint) return;
+      if(!val){ hint.style.display='none'; return; }
+      hint.style.display = (_knownHsLower.length && !_knownHsLower.includes(val.toLowerCase())) ? 'block' : 'none';
+    };
+    hsInput.addEventListener('blur', checkHsHint);
+    hsInput.addEventListener('input', checkHsHint);
+  }
+});
 
 // ── Keyboard ─────────────────────────────────────────────────────────
 document.addEventListener('keydown', e=>{
@@ -1410,6 +1680,11 @@ document.addEventListener('keydown', e=>{
 
 // ── Init ─────────────────────────────────────────────────────────────
 renderSearch('');
+// FIX 15: hide search skeleton once initialized
+const skeletonList = document.getElementById('skeletonList');
+if(skeletonList) skeletonList.style.display='none';
+// FIX 4/12: update counters on load
+updateCounters();
 </script>
 
 <!-- ═══ ADD MODAL BACKDROP ═══ -->
@@ -1431,22 +1706,28 @@ renderSearch('');
         <div class="field-group">
           <label class="field-label" for="addName">Full Name <span>*</span></label>
           <input class="field-input" id="addName" type="text" placeholder="e.g. Yoni Cohen" autocomplete="off"/>
+          <span class="field-error" id="addNameError"></span>
         </div>
         <div class="field-row">
           <div class="field-group">
             <label class="field-label" for="addHs">High School</label>
-            <input class="field-input" id="addHs" type="text" placeholder="e.g. Frisch"/>
+            <input class="field-input" id="addHs" type="text" placeholder="e.g. Frisch" list="hsDatalist" autocomplete="off"/>
+            <datalist id="hsDatalist"></datalist>
+            <span class="hs-hint" id="addHsHint">Not on the list? Double-check the spelling.</span>
           </div>
           <div class="field-group">
             <label class="field-label" for="addPhone">Phone</label>
             <input class="field-input" id="addPhone" type="tel" placeholder="e.g. 917-555-0100"/>
+            <span class="field-error" id="addPhoneError"></span>
           </div>
         </div>
         <div class="field-group">
           <label class="field-label" for="addYeshivaSelect">Yeshiva <span>*</span></label>
           <select class="field-select" id="addYeshivaSelect"></select>
+          <span class="field-error" id="addYeshivaError"></span>
           <div class="yeshiva-new-wrap" id="addYeshivaNewWrap">
             <input class="field-input" id="addYeshivaNew" type="text" placeholder="New yeshiva name…"/>
+            <span class="field-error" id="addYeshivaNewError"></span>
           </div>
         </div>
       </div>
