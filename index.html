@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#f5f2eb">
 <title>Yeshiva Directory 2026–2027</title>
 <link rel="icon" href="/favicon.ico" type="image/x-icon">
 <meta name="description" content="Find any student in the Yeshiva Directory for the 2026–2027 year. Search by name, high school, or yeshiva.">
@@ -78,6 +81,9 @@ body {
 }
 .nav-btn:hover, .nav-btn.active { color: var(--black); }
 .nav-btn:hover::after, .nav-btn.active::after { transform: scaleX(1); }
+/* On desktop, header-row1 is transparent (display:contents) so brand and pill
+   remain as direct flex children of .header, preserving the original layout */
+.header-row1 { display: contents; }
 .header-pill {
   font-size: 0.62rem; letter-spacing: 0.1em; color: var(--mid);
   font-weight: 400; white-space: nowrap;
@@ -1013,6 +1019,166 @@ mark {
 /* ── HS HINT (FIX 8) ── */
 .hs-hint { font-size: 0.72rem; color: var(--gray); margin-top: 4px; display: none; }
 
+/* ── HS AUTOCOMPLETE DROPDOWN ── */
+.hs-autocomplete-wrap { position: relative; }
+.hs-dropdown {
+  position: absolute; left: 0; right: 0; top: calc(100% + 6px);
+  background: #ffffff; border: 1px solid #e8e0d0;
+  border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+  z-index: 1000; max-height: 320px; overflow-y: auto;
+  opacity: 0; pointer-events: none;
+  transform: translateY(4px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+}
+.hs-dropdown.open {
+  opacity: 1; pointer-events: all; transform: translateY(0);
+}
+.hs-dropdown-item {
+  display: flex; align-items: center; justify-content: space-between;
+  min-height: 44px; padding: 10px 14px; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; font-size: 0.9rem; color: var(--ink);
+  transition: background 0.1s; border-radius: 0;
+}
+.hs-dropdown-item:first-child { border-radius: 12px 12px 0 0; }
+.hs-dropdown-item:last-child { border-radius: 0 0 12px 12px; }
+.hs-dropdown-item:hover, .hs-dropdown-item.active { background: #f5f0e8; }
+.hs-dropdown-item mark { background: none; color: var(--accent); font-weight: 700; text-decoration: none; }
+.hs-dropdown-count {
+  font-size: 0.7rem; color: var(--mid); background: var(--cream);
+  padding: 2px 7px; border-radius: 10px; flex-shrink: 0; margin-left: 8px; white-space: nowrap;
+}
+.hs-dropdown-add {
+  font-style: italic; color: var(--accent);
+}
+.hs-phone-warn {
+  font-size: 0.72rem; color: #c0392b; margin-top: 4px; display: none;
+}
+.hs-unrecognized-warn {
+  font-size: 0.72rem; color: #8a7020; background: #fffbe6;
+  border: 1px solid #f0e080; border-radius: 4px;
+  padding: 4px 8px; margin-top: 4px; display: none;
+}
+
+/* ── YESHIVA AUTOCOMPLETE ── */
+.yeshiva-autocomplete-wrap { position: relative; }
+.yeshiva-dropdown {
+  position: absolute; left: 0; right: 0; top: calc(100% + 6px);
+  background: #ffffff; border: 1px solid #e8e0d0;
+  border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+  z-index: 1001; max-height: 280px; overflow-y: auto;
+  opacity: 0; pointer-events: none;
+  transform: translateY(4px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+}
+.yeshiva-dropdown.open {
+  opacity: 1; pointer-events: all; transform: translateY(0);
+}
+.yeshiva-dropdown-item {
+  display: flex; align-items: center; justify-content: space-between;
+  min-height: 44px; padding: 10px 14px; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; font-size: 0.9rem; color: var(--ink);
+  transition: background 0.1s;
+}
+.yeshiva-dropdown-item:first-child { border-radius: 12px 12px 0 0; }
+.yeshiva-dropdown-item:last-child { border-radius: 0 0 12px 12px; }
+.yeshiva-dropdown-add { font-style: italic; color: var(--accent); }
+.yeshiva-dropdown-item:hover, .yeshiva-dropdown-item.active { background: #f5f0e8; }
+
+/* ── MOBILE IMPROVEMENTS ── */
+@media (hover: none) and (pointer: coarse) {
+  #cursor { display: none !important; }
+  body { cursor: auto !important; }
+}
+
+/* ── MOBILE NAVBAR ── */
+@media (max-width: 768px) {
+  .header {
+    height: auto;
+    padding: 8px 16px 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    border-bottom: 1px solid var(--accent);
+  }
+  .header-row1 {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-bottom: 8px;
+  }
+  .header-brand { font-size: 0.9rem; }
+  .header-pill { display: block !important; font-size: 0.6rem; color: var(--mid); white-space: nowrap; }
+  .header-nav {
+    display: flex; gap: 0; overflow-x: auto; scrollbar-width: none;
+    -webkit-overflow-scrolling: touch; flex-shrink: 0;
+    padding-bottom: 0; border-top: none;
+  }
+  .header-nav::-webkit-scrollbar { display: none; }
+  .nav-btn {
+    flex: 1; min-width: 0; white-space: nowrap;
+    padding: 8px 12px 10px; font-size: 0.6rem;
+    border-radius: 0; text-align: center;
+    border-bottom: 2px solid transparent;
+  }
+  .nav-btn.active {
+    border-bottom-color: var(--accent);
+    color: var(--black);
+  }
+  .nav-btn::after { display: none; }
+  .search-hero, .results-wrap, .yeshivot-hero, .yeshivot-grid, .hs-hero, .hs-grid,
+  .stats-hero, .stats-tabs, .bar-chart, .overlay-inner, .co-inner {
+    padding-top: 100px;
+  }
+  .add-modal {
+    top: auto; bottom: 0; left: 0; right: 0;
+    transform: translateY(10px) scale(0.99);
+    width: 100%; max-height: calc(100dvh - 80px);
+    border-radius: 16px 16px 0 0;
+    overflow-y: auto; -webkit-overflow-scrolling: touch;
+  }
+  .add-modal.open {
+    transform: translateY(0) scale(1);
+  }
+  .add-modal-body { max-height: calc(100dvh - 160px); overflow-y: auto; }
+}
+
+/* ── FAB SAFE AREA ── */
+@media (max-width: 768px) {
+  .add-self-fab {
+    position: fixed !important;
+    bottom: max(16px, env(safe-area-inset-bottom)) !important;
+    right: 16px !important;
+    width: auto !important;
+    margin: 0 !important;
+  }
+}
+
+/* ── TOUCH IMPROVEMENTS ── */
+button, a, [onclick], .nav-btn, .yeshiva-card, .hs-card, .sort-btn, .stats-tab, .alpha-btn {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+input, select, textarea {
+  font-size: 16px !important;
+}
+.field-input, .field-select, .search-input, .ov-search {
+  font-size: 16px !important;
+}
+.footer {
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+}
+
+/* ── STATS CHART SCROLL ── */
+@media (max-width: 768px) {
+  .bar-chart { overflow-x: auto; padding-bottom: 16px; }
+  .bar-row { min-width: 480px; }
+  .alpha-jump { gap: 2px; }
+  .alpha-btn { width: 22px; height: 22px; font-size: 0.55rem; min-height: 22px; min-width: 22px; }
+}
+
+/* Hide search cancel button */
+::-webkit-search-cancel-button { display: none; -webkit-appearance: none; }
+
 /* ── SKELETON (FIX 15) ── */
 @keyframes pulse {
   0%, 100% { opacity: 1; }
@@ -1048,14 +1214,16 @@ mark {
 
 <!-- HEADER -->
 <header class="header">
-  <span class="header-brand">Yeshiva 2026–27</span>
+  <div class="header-row1">
+    <span class="header-brand">Yeshiva 2026–27</span>
+    <span class="header-pill" id="headerPill">526 students &middot; 29 yeshivot</span>
+  </div>
   <nav class="header-nav">
     <button class="nav-btn active" id="navSearch"    onclick="switchView('Search')">Search</button>
     <button class="nav-btn"        id="navYeshivot"  onclick="switchView('Yeshivot')">Yeshivot</button>
     <button class="nav-btn"        id="navHs"        onclick="switchView('Hs')">High Schools</button>
     <button class="nav-btn"        id="navStats"     onclick="switchView('Stats')">Stats</button>
   </nav>
-  <span class="header-pill" id="headerPill">526 students &middot; 29 yeshivot</span>
 </header>
 
 <!-- ═══ SEARCH VIEW ═══ -->
@@ -1226,19 +1394,339 @@ const YESHIVA_WHATSAPP = {
 // ── High-school name aliases (maps any variant → canonical name) ─────
 // 'hasmonean' entry ensures correct casing even if user types all-caps
 const HS_ALIASES = {
-  'has': 'Hasmonean',
-  'hasmo': 'Hasmonean',
-  'hasmonean': 'Hasmonean',
+  'has': 'Hasmonean', 'hasmo': 'Hasmonean', 'hasmonean': 'Hasmonean',
+  'drs': 'DRS', 'mta': 'MTA', 'sar': 'SAR Academy',
+  'kyhs': 'Kohelet Yeshiva High School', 'yoc': 'YOC', 'icja': 'ICJA',
+  'fyhs': 'FYHS', 'tabc': 'TABC', 'jec': 'JEC', 'chat': 'CHAT',
+  'haftr': 'HAFTR', 'jds': 'JDS',
+  'berman': 'Berman Hebrew Academy',
+  'ramaz': 'Ramaz', 'frisch': 'The Frisch School',
 };
 function normalizeHsName(name) {
   if (!name?.trim()) return name;
-  const key = name.trim().toLowerCase();
-  return HS_ALIASES[key] || name.trim();
+  const trimmed = name.trim();
+  const key = trimmed.toLowerCase();
+  if (HS_ALIASES[key]) return HS_ALIASES[key];
+  // Normalize known case variants: HAS -> Hasmonean
+  if (/^HAS$/i.test(trimmed)) return 'Hasmonean';
+  return trimmed;
+}
+
+// ── HS AUTOCOMPLETE ─────────────────────────────────────────────────
+const HS_PHONE_RE = /^\(?\d{3}/;
+const HS_HARDCODED = [
+  'DRS','MTA','SAR Academy','HAFTR','TABC','JEC','Frisch','The Frisch School',
+  'Ramaz','CHAT','JDS','Berman Hebrew Academy','ICJA','FYHS',
+  'Kohelet Yeshiva High School','YOC','Hasmonean','Beth Tfiloh',
+  'Belmont Hill','Rambam Mesivta','Flatbush','Kushner','Valley Torah',
+  'Westchester Day School','Hebrew Academy','NSHA','Bnei Akiva',
+  'Torah Academy','Ida Crown','South Bend Hebrew Day','OJCS','OCS'
+];
+function getHsSchoolList() {
+  const counts = {};
+  getStudents().forEach(s => {
+    if (!s.high_school || HS_PHONE_RE.test(s.high_school)) return;
+    const n = normalizeHsName(s.high_school);
+    counts[n] = (counts[n]||0)+1;
+  });
+  const fromData = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+  // Merge hardcoded list (without duplicating)
+  const seen = new Set(fromData.map(([n])=>n.toLowerCase()));
+  HS_HARDCODED.forEach(h=>{
+    if(!seen.has(h.toLowerCase())) fromData.push([h,0]);
+  });
+  return fromData; // [[name, count], ...]
+}
+
+function scoreMatch(query, name) {
+  if (!query) return 0;
+  const q = query.toLowerCase().trim();
+  const n = name.toLowerCase();
+  const words = n.split(/\s+/);
+  if (n === q) return 100;
+  if (n.startsWith(q)) return 90;
+  if (words.some(w => w.startsWith(q))) return 80;
+  if (n.includes(q)) return 70;
+  // fuzzy: check if all chars of q appear in order in n
+  let qi = 0;
+  for (const ch of n) { if (ch === q[qi]) qi++; }
+  if (qi === q.length) return 50 + (q.length / n.length) * 10;
+  return 0;
+}
+
+function highlightMatch(name, query) {
+  if (!query) return esc(name);
+  const q = query.toLowerCase().trim();
+  const lo = name.toLowerCase();
+  // Try exact word-start match first
+  const wordMatch = lo.match(new RegExp('(?:^|\\s)(' + q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + ')', 'i'));
+  if (wordMatch) {
+    const idx = lo.indexOf(wordMatch[1].toLowerCase().trim());
+    return esc(name.slice(0,idx)) + '<mark>' + esc(name.slice(idx,idx+q.length)) + '</mark>' + esc(name.slice(idx+q.length));
+  }
+  // Fallback: highlight first occurrence
+  const idx = lo.indexOf(q);
+  if (idx >= 0) {
+    return esc(name.slice(0,idx)) + '<mark>' + esc(name.slice(idx,idx+q.length)) + '</mark>' + esc(name.slice(idx+q.length));
+  }
+  return esc(name);
+}
+
+let hsDropdownActive = -1;
+let hsDropdownItems = [];
+
+function buildHsDropdown(input) {
+  const val = input.value;
+  const phoneWarn = document.getElementById('hsPhoneWarn');
+  const unrecWarn = document.getElementById('hsUnrecognizedWarn');
+  const dropdown = document.getElementById('hsDropdown');
+  if (!dropdown) return;
+
+  // Hide warnings by default
+  if(phoneWarn) phoneWarn.style.display = 'none';
+  if(unrecWarn) unrecWarn.style.display = 'none';
+
+  // Phone number check
+  if (HS_PHONE_RE.test(val.trim())) {
+    if(phoneWarn) phoneWarn.style.display = 'block';
+    closeHsDropdown();
+    return;
+  }
+
+  if (!val.trim()) { closeHsDropdown(); return; }
+
+  const schools = getHsSchoolList();
+  const q = val.toLowerCase().trim();
+  const scored = schools
+    .map(([name, count]) => ({ name, count, score: scoreMatch(q, name) }))
+    .filter(x => x.score > 0)
+    .sort((a,b) => (b.score - a.score) || (b.count - a.count))
+    .slice(0,7);
+
+  dropdown.innerHTML = '';
+  hsDropdownItems = [];
+  hsDropdownActive = -1;
+
+  scored.forEach(({name, count}) => {
+    const item = document.createElement('div');
+    item.className = 'hs-dropdown-item';
+    item.setAttribute('role','option');
+    const countHtml = count > 0 ? `<span class="hs-dropdown-count">${count}</span>` : '';
+    item.innerHTML = `<span>${highlightMatch(name, q)}</span>${countHtml}`;
+    item.addEventListener('mousedown', e => { e.preventDefault(); selectHsItem(name, input); });
+    dropdown.appendChild(item);
+    hsDropdownItems.push(item);
+  });
+
+  // "+ Add" row
+  const addItem = document.createElement('div');
+  addItem.className = 'hs-dropdown-item hs-dropdown-add';
+  addItem.setAttribute('role','option');
+  addItem.innerHTML = `<em>+ Add "${esc(val)}" as new school</em>`;
+  addItem.addEventListener('mousedown', e => { e.preventDefault(); selectHsItem(val, input); });
+  dropdown.appendChild(addItem);
+  hsDropdownItems.push(addItem);
+
+  input.setAttribute('aria-expanded','true');
+  dropdown.classList.add('open');
+}
+
+function selectHsItem(name, input) {
+  input.value = name;
+  closeHsDropdown();
+  // Move focus to phone field
+  const phoneField = document.getElementById('addPhone');
+  if(phoneField) phoneField.focus();
+}
+
+function closeHsDropdown() {
+  const dropdown = document.getElementById('hsDropdown');
+  const input = document.getElementById('addHs');
+  if(dropdown) dropdown.classList.remove('open');
+  if(input) input.setAttribute('aria-expanded','false');
+  hsDropdownActive = -1;
+}
+
+let _hsAutoInited = false;
+function initHsAutocomplete() {
+  if (_hsAutoInited) return; _hsAutoInited = true;
+  const input = document.getElementById('addHs');
+  if (!input) return;
+
+  input.addEventListener('input', () => buildHsDropdown(input));
+  input.addEventListener('focus', () => { if(input.value.trim()) buildHsDropdown(input); });
+  input.addEventListener('blur', () => {
+    setTimeout(() => {
+      closeHsDropdown();
+      // Resolve alias on blur
+      const val = input.value.trim();
+      if (!val) return;
+      const key = val.toLowerCase();
+      if (HS_ALIASES[key]) { input.value = HS_ALIASES[key]; return; }
+      // Check if value is recognized (no need to re-check HS_ALIASES since we already returned above)
+      const schools = getHsSchoolList();
+      const recognized = schools.some(([name]) => name.toLowerCase() === key);
+      const unrecWarn = document.getElementById('hsUnrecognizedWarn');
+      if (!recognized && val && !HS_PHONE_RE.test(val) && unrecWarn) {
+        unrecWarn.style.display = 'block';
+      }
+    }, 200);
+  });
+  input.addEventListener('keydown', e => {
+    const dropdown = document.getElementById('hsDropdown');
+    if (!dropdown?.classList.contains('open')) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      hsDropdownActive = Math.min(hsDropdownActive+1, hsDropdownItems.length-1);
+      hsDropdownItems.forEach((el,i)=>el.classList.toggle('active',i===hsDropdownActive));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      hsDropdownActive = Math.max(hsDropdownActive-1, -1);
+      hsDropdownItems.forEach((el,i)=>el.classList.toggle('active',i===hsDropdownActive));
+    } else if (e.key === 'Enter') {
+      if (hsDropdownActive >= 0) {
+        e.preventDefault();
+        hsDropdownItems[hsDropdownActive].dispatchEvent(new MouseEvent('mousedown'));
+      }
+    } else if (e.key === 'Escape') {
+      closeHsDropdown();
+    }
+  });
+  // Close if clicking outside
+  document.addEventListener('click', e => {
+    const wrap = document.getElementById('hsAutocompleteWrap');
+    if (wrap && !wrap.contains(e.target)) closeHsDropdown();
+  });
+}
+
+// ── YESHIVA AUTOCOMPLETE ─────────────────────────────────────────────
+let yeshivaDropdownActive = -1;
+let yeshivaDropdownItems = [];
+let yeshivaSelectedValue = '';
+
+function buildYeshivaDropdown(input) {
+  const dropdown = document.getElementById('yeshivaDropdown');
+  const hiddenInput = document.getElementById('addYeshivaSelect');
+  if (!dropdown) return;
+  const val = input.value.trim();
+  if (!val) { closeYeshivaDropdown(); return; }
+  const q = val.toLowerCase();
+  const yeshivot = getYeshivot(); // [[name, count], ...]
+
+  const scored = yeshivot
+    .map(([name, count]) => ({ name: normalizeYeshivaName(name), raw: name, count, score: scoreMatch(q, normalizeYeshivaName(name)) }))
+    .filter(x => x.score > 0)
+    .sort((a,b) => (b.score - a.score) || (b.count - a.count))
+    .slice(0, 10);
+
+  dropdown.innerHTML = '';
+  yeshivaDropdownItems = [];
+  yeshivaDropdownActive = -1;
+
+  // Add "+ new" option
+  const addItem = document.createElement('div');
+  addItem.className = 'yeshiva-dropdown-item yeshiva-dropdown-add';
+  addItem.innerHTML = `+ Add "${esc(val)}" as new yeshiva`;
+  addItem.addEventListener('mousedown', e => {
+    e.preventDefault();
+    input.value = val;
+    if(hiddenInput) { hiddenInput.value = '__new__'; }
+    const newWrap = document.getElementById('addYeshivaNewWrap');
+    const newInput = document.getElementById('addYeshivaNew');
+    if(newWrap) newWrap.style.display = 'block';
+    if(newInput) { newInput.value = val; newInput.focus(); }
+    closeYeshivaDropdown();
+  });
+
+  scored.forEach(({name, raw, count}) => {
+    const item = document.createElement('div');
+    item.className = 'yeshiva-dropdown-item';
+    item.setAttribute('role','option');
+    const countHtml = `<span class="hs-dropdown-count">${count}</span>`;
+    item.innerHTML = `<span>${highlightMatch(name, q)}</span>${countHtml}`;
+    item.addEventListener('mousedown', e => {
+      e.preventDefault();
+      selectYeshivaItem(name, raw, input);
+    });
+    dropdown.appendChild(item);
+    yeshivaDropdownItems.push(item);
+  });
+
+  dropdown.appendChild(addItem);
+  yeshivaDropdownItems.push(addItem);
+
+  input.setAttribute('aria-expanded','true');
+  dropdown.classList.add('open');
+}
+
+function selectYeshivaItem(displayName, rawName, input) {
+  input.value = displayName;
+  yeshivaSelectedValue = rawName;
+  const hiddenInput = document.getElementById('addYeshivaSelect');
+  if(hiddenInput) hiddenInput.value = rawName;
+  const newWrap = document.getElementById('addYeshivaNewWrap');
+  if(newWrap) newWrap.style.display = 'none';
+  closeYeshivaDropdown();
+}
+
+function closeYeshivaDropdown() {
+  const dropdown = document.getElementById('yeshivaDropdown');
+  const input = document.getElementById('addYeshivaInput');
+  if(dropdown) dropdown.classList.remove('open');
+  if(input) input.setAttribute('aria-expanded','false');
+  yeshivaDropdownActive = -1;
+}
+
+let _yeshivaAutoInited = false;
+function initYeshivaAutocomplete() {
+  if (_yeshivaAutoInited) return; _yeshivaAutoInited = true;
+  const input = document.getElementById('addYeshivaInput');
+  if (!input) return;
+  const hiddenInput = document.getElementById('addYeshivaSelect');
+
+  input.addEventListener('input', () => {
+    if(hiddenInput) hiddenInput.value = '';
+    yeshivaSelectedValue = '';
+    buildYeshivaDropdown(input);
+  });
+  input.addEventListener('focus', () => { if(input.value.trim()) buildYeshivaDropdown(input); });
+  input.addEventListener('blur', () => { setTimeout(closeYeshivaDropdown, 200); });
+  input.addEventListener('keydown', e => {
+    const dropdown = document.getElementById('yeshivaDropdown');
+    if (!dropdown?.classList.contains('open')) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      yeshivaDropdownActive = Math.min(yeshivaDropdownActive+1, yeshivaDropdownItems.length-1);
+      yeshivaDropdownItems.forEach((el,i)=>el.classList.toggle('active',i===yeshivaDropdownActive));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      yeshivaDropdownActive = Math.max(yeshivaDropdownActive-1, -1);
+      yeshivaDropdownItems.forEach((el,i)=>el.classList.toggle('active',i===yeshivaDropdownActive));
+    } else if (e.key === 'Enter') {
+      if (yeshivaDropdownActive >= 0) {
+        e.preventDefault();
+        yeshivaDropdownItems[yeshivaDropdownActive].dispatchEvent(new MouseEvent('mousedown'));
+      }
+    } else if (e.key === 'Escape') {
+      closeYeshivaDropdown();
+    }
+  });
+  document.addEventListener('click', e => {
+    const wrap = input.closest('.yeshiva-autocomplete-wrap');
+    if (wrap && !wrap.contains(e.target)) closeYeshivaDropdown();
+  });
 }
 
 // ── FIX 19: strip "NEW " prefix from yeshiva names for display ───────
+const YESHIVA_NAME_FIXES = {
+  'aish gesher': 'Aish Gesher',
+  'ohr hatorah': 'Ohr HaTorah',
+  'yavneh boys': 'Yavneh Boys',
+  'derech ohr samaech': 'Derech Ohr Sameach',
+};
 function normalizeYeshivaName(name) {
-  return (name || '').replace(/^NEW\s+/i, '').trim();
+  const stripped = (name || '').replace(/^NEW\s+/i, '').trim();
+  return YESHIVA_NAME_FIXES[stripped.toLowerCase()] || stripped;
 }
 
 // ── FIX 1: spam yeshiva filter ────────────────────────────────────────
@@ -1257,10 +1745,10 @@ function getHsList() {
   const all = getStudents();
   const counts = {};
   all.forEach(s => {
-    if(s.high_school) {
-      const normalized = normalizeHsName(s.high_school);
-      counts[normalized] = (counts[normalized]||0)+1;
-    }
+    if (!s.high_school) return;
+    if (HS_PHONE_RE.test(s.high_school)) return; // skip phone-like values
+    const normalized = normalizeHsName(s.high_school);
+    counts[normalized] = (counts[normalized]||0)+1;
   });
   return Object.entries(counts).sort((a,b)=>b[1]-a[1]);
 }
@@ -1290,21 +1778,7 @@ function updateCounters() {
   if(yeshivotSub) yeshivotSub.innerHTML = yCount + ' programs &mdash; click any to explore &mdash; <strong class="compare-hint">&#x2303; ctrl+click to compare</strong>';
 }
 
-// ── FIX 8: build HS datalist from known schools (2+ appearances) ──────
-let _knownHsLower = [];
-function populateHsDatalist() {
-  const dl = document.getElementById('hsDatalist');
-  if(!dl) return;
-  dl.innerHTML = '';
-  const hsList = getHsList();
-  const filtered = hsList.filter(([_name, count])=>count>=2).sort((a,b)=>a[0].localeCompare(b[0]));
-  _knownHsLower = filtered.map(([name])=>name.toLowerCase());
-  filtered.forEach(([name])=>{
-    const opt = document.createElement('option');
-    opt.value = name;
-    dl.appendChild(opt);
-  });
-}
+
 
 
 
@@ -1443,6 +1917,8 @@ function renderYeshivotGrid(){
       if(e.shiftKey||e.ctrlKey||e.metaKey) toggleCompare(name,card);
       else openOverlay('yeshiva',name);
     });
+    // Restore visual indicator if already in compareSet
+    if(compareSet.has(name)){card.style.outline='2px solid var(--accent)';card.style.outlineOffset='2px';}
     grid.appendChild(card);
     setTimeout(()=>{card.querySelector('.yc-bar').style.width=pct+'%';},i*30+100);
   });
@@ -1588,7 +2064,13 @@ function renderOverlayList(students,query){
   if(overlaySchoolFilter) filtered=filtered.filter(s=>normalizeYeshivaName(s.yeshiva)===overlaySchoolFilter||normalizeHsName(s.high_school)===overlaySchoolFilter);
   if(query.trim()){
     const q=norm(query);
-    filtered=filtered.filter(s=>norm(s.name).includes(q)||norm(s.high_school).includes(q));
+    filtered=filtered.filter(s=>{
+      if(norm(s.name).includes(q)) return true;
+      if(norm(s.high_school||'').includes(q)) return true;
+      // fuzzy: reuse scoreMatch for consistency (min length 3 to avoid false positives)
+      if(q.length>=3 && scoreMatch(q, norm(s.name)) > 0) return true;
+      return false;
+    });
   }
   if(overlaySort==='alpha') filtered.sort((a,b)=>a.name.localeCompare(b.name));
   else filtered.sort((a,b)=>(a.high_school||'').localeCompare(b.high_school||'')||a.name.localeCompare(b.name));
@@ -1688,7 +2170,7 @@ function clearAddFormErrors() {
     const el = document.getElementById(id);
     if(el){ el.textContent=''; el.style.display='none'; }
   });
-  ['addName','addHs','addPhone','addYeshivaSelect','addYeshivaNew'].forEach(id=>{
+  ['addName','addHs','addPhone','addYeshivaInput','addYeshivaNew'].forEach(id=>{
     const el = document.getElementById(id);
     if(el) el.classList.remove('invalid');
   });
@@ -1712,15 +2194,20 @@ function resetAddForm() {
   const phoneEl = document.getElementById('addPhone');
   if(phoneEl) phoneEl.value = '';
   const sel = document.getElementById('addYeshivaSelect');
-  if(sel) sel.selectedIndex = 0;
+  if(sel) sel.value = '';
+  const yInput = document.getElementById('addYeshivaInput');
+  if(yInput) yInput.value = '';
+  yeshivaSelectedValue = '';
   const newWrap = document.getElementById('addYeshivaNewWrap');
   if(newWrap) newWrap.style.display = 'none';
   const newInput = document.getElementById('addYeshivaNew');
   if(newInput) newInput.value = '';
   const yeshivaNameInput = document.getElementById('addYeshivaName');
   if(yeshivaNameInput) yeshivaNameInput.value = '';
-  const hint = document.getElementById('addHsHint');
-  if(hint) hint.style.display = 'none';
+  const phoneWarn = document.getElementById('hsPhoneWarn');
+  if(phoneWarn) phoneWarn.style.display = 'none';
+  const unrecWarn = document.getElementById('hsUnrecognizedWarn');
+  if(unrecWarn) unrecWarn.style.display = 'none';
 }
 
 function openAddModal(mode, prefillName){
@@ -1737,26 +2224,15 @@ function openAddModal(mode, prefillName){
     studentFields.style.display = 'block';
     yeshivaFields.style.display = 'none';
     if(prefillName) document.getElementById('addName').value = prefillName;
-    // FIX 1: Populate yeshiva dropdown with disabled placeholder first
-    const sel = document.getElementById('addYeshivaSelect');
-    sel.innerHTML = '';
-    const placeholder = document.createElement('option');
-    placeholder.value = ''; placeholder.textContent = '\u2014 Select your yeshiva \u2014';
-    placeholder.disabled = true; placeholder.selected = true;
-    sel.appendChild(placeholder);
-    getYeshivot().forEach(([y])=>{
-      const opt = document.createElement('option');
-      opt.value = y;
-      opt.textContent = normalizeYeshivaName(y);
-      sel.appendChild(opt);
-    });
-    const otherOpt = document.createElement('option'); otherOpt.value='__new__'; otherOpt.textContent='+ Add new yeshiva...'; sel.appendChild(otherOpt);
-    sel.onchange = ()=>{
-      clearAddFormErrors();
-      document.getElementById('addYeshivaNewWrap').style.display = sel.value==='__new__' ? 'block' : 'none';
-    };
-    // FIX 8: populate HS datalist
-    populateHsDatalist();
+    // Initialize yeshiva autocomplete
+    yeshivaSelectedValue = '';
+    const yInput = document.getElementById('addYeshivaInput');
+    if(yInput) { yInput.value = ''; }
+    const hiddenSel = document.getElementById('addYeshivaSelect');
+    if(hiddenSel) hiddenSel.value = '';
+    document.getElementById('addYeshivaNewWrap').style.display = 'none';
+    initYeshivaAutocomplete();
+    initHsAutocomplete();
   } else {
     title.textContent = 'Add New Yeshiva';
     studentFields.style.display = 'none';
@@ -1831,7 +2307,7 @@ function submitAdd(){
 
     // FIX 1: validate yeshiva selection
     if(!yeshiva){
-      showFieldError('addYeshivaSelect','addYeshivaError','Please select your yeshiva.');
+      showFieldError('addYeshivaInput','addYeshivaError','Please select your yeshiva.');
       hasError=true;
     } else if(yeshiva === '__new__'){
       const newYeshiva = document.getElementById('addYeshivaNew').value.trim();
@@ -1940,26 +2416,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
       phoneInput.classList.remove('invalid');
     });
   }
-  // FIX 8: HS hint on blur/input (uses cached _knownHsLower for performance)
-  const hsInput = document.getElementById('addHs');
-  if(hsInput){
-    const HS_PHONE_RE = /^\(?\d{3}\)?[\s\-]?\d{3}[\s\-]?\d{4}$/;
-    const checkHsHint = ()=>{
-      const val = hsInput.value.trim();
-      const hint = document.getElementById('addHsHint');
-      if(!hint) return;
-      if(!val){ hint.style.display='none'; return; }
-      if(HS_PHONE_RE.test(val)){
-        hint.textContent='Please enter a school name, not a phone number.';
-        hint.style.color='#c0392b'; hint.style.display='block'; return;
-      }
-      hint.textContent='Not on the list? Double-check the spelling.';
-      hint.style.color=''; // reset to default
-      hint.style.display = (_knownHsLower.length && !_knownHsLower.includes(val.toLowerCase())) ? 'block' : 'none';
-    };
-    hsInput.addEventListener('blur', checkHsHint);
-    hsInput.addEventListener('input', checkHsHint);
-  }
+  // HS autocomplete is initialized via initHsAutocomplete() in openAddModal
 });
 
 // ── Keyboard ─────────────────────────────────────────────────────────
@@ -2005,10 +2462,13 @@ updateCounters();
         <div class="field-row">
           <div class="field-group">
             <label class="field-label" for="addHs">High School</label>
-            <input class="field-input" id="addHs" type="text" placeholder="e.g. Frisch" list="hsDatalist" autocomplete="off"/>
-            <datalist id="hsDatalist"></datalist>
+            <div class="hs-autocomplete-wrap" id="hsAutocompleteWrap">
+              <input class="field-input" id="addHs" type="text" placeholder="e.g. Frisch" autocomplete="off" role="combobox" aria-expanded="false" aria-autocomplete="list" aria-controls="hsDropdown"/>
+              <div class="hs-dropdown" id="hsDropdown" role="listbox"></div>
+              <span class="hs-phone-warn" id="hsPhoneWarn">That looks like a phone number — please enter your school name</span>
+              <span class="hs-unrecognized-warn" id="hsUnrecognizedWarn">We don't recognize this school — double-check the spelling</span>
+            </div>
             <span class="field-error" id="addHsError"></span>
-            <span class="hs-hint" id="addHsHint">Not on the list? Double-check the spelling.</span>
           </div>
           <div class="field-group">
             <label class="field-label" for="addPhone">Phone</label>
@@ -2017,10 +2477,14 @@ updateCounters();
           </div>
         </div>
         <div class="field-group">
-          <label class="field-label" for="addYeshivaSelect">Yeshiva <span>*</span></label>
-          <select class="field-select" id="addYeshivaSelect"></select>
+          <label class="field-label" for="addYeshivaInput">Yeshiva <span>*</span></label>
+          <div class="yeshiva-autocomplete-wrap">
+            <input class="field-input" id="addYeshivaInput" type="text" placeholder="e.g. Shaalvim" autocomplete="off" role="combobox" aria-expanded="false" aria-autocomplete="list" aria-controls="yeshivaDropdown"/>
+            <div class="yeshiva-dropdown" id="yeshivaDropdown" role="listbox"></div>
+          </div>
+          <input type="hidden" id="addYeshivaSelect" value=""/>
           <span class="field-error" id="addYeshivaError"></span>
-          <div class="yeshiva-new-wrap" id="addYeshivaNewWrap">
+          <div class="yeshiva-new-wrap" id="addYeshivaNewWrap" style="display:none">
             <input class="field-input" id="addYeshivaNew" type="text" placeholder="New yeshiva name…"/>
             <span class="field-error" id="addYeshivaNewError"></span>
           </div>
