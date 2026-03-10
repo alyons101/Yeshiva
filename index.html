@@ -731,20 +731,72 @@ mark {
 .add-self-fab {
   position: fixed; bottom: 80px; right: 32px; z-index: 200;
   background: var(--black); color: var(--bg);
-  width: 52px; height: 52px; border-radius: 50%;
-  border: none; cursor: none; font-size: 1.5rem; font-weight: 200;
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
-  transition: transform 0.2s, background 0.2s;
+  height: 48px; border-radius: 50px;
+  border: none; cursor: none; font-size: 0.78rem; font-weight: 400;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 0 22px;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+  transition: transform 0.2s, background 0.2s, box-shadow 0.2s;
 }
-.add-self-fab:hover { background: var(--accent); transform: scale(1.1) rotate(90deg); }
+.add-self-fab:hover { background: var(--accent); transform: translateY(-3px); box-shadow: 0 12px 32px rgba(0,0,0,0.28); }
+.add-self-fab-icon { font-size: 1.2rem; font-weight: 200; line-height: 1; }
 .add-self-fab-label {
   position: fixed; bottom: 87px; right: 94px; z-index: 200;
   font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase;
   color: var(--gray); white-space: nowrap; pointer-events: none;
   opacity: 0; transition: opacity 0.2s;
 }
-.add-self-fab:hover ~ .add-self-fab-label { opacity: 1; }
+
+/* ── WhatsApp button ── */
+.wa-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: #25d366; color: #fff;
+  border: none; border-radius: 50px; cursor: none;
+  font-family: 'DM Sans', sans-serif; font-size: 0.62rem;
+  font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 6px 14px; text-decoration: none;
+  transition: background 0.18s, transform 0.15s;
+  white-space: nowrap; flex-shrink: 0;
+}
+.wa-btn:hover { background: #1ebe5a; transform: scale(1.04); }
+.wa-btn svg { flex-shrink: 0; }
+
+/* WhatsApp button on yeshiva card */
+.yc-wa-btn {
+  position: absolute; top: 14px; right: 14px;
+  display: inline-flex; align-items: center; gap: 5px;
+  background: #25d366; color: #fff;
+  border: none; border-radius: 50px; cursor: none;
+  font-family: 'DM Sans', sans-serif; font-size: 0.58rem;
+  font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 5px 11px; text-decoration: none;
+  opacity: 0.85;
+  transition: opacity 0.18s, transform 0.15s, background 0.18s;
+  z-index: 2;
+}
+.yc-wa-btn:hover { opacity: 1; background: #1ebe5a; transform: scale(1.06); }
+.yeshiva-card:hover .yc-wa-btn { opacity: 1; color: #fff; }
+
+/* WhatsApp join banner in overlay */
+.overlay-wa-row {
+  display: flex; align-items: center; gap: 14px; margin-bottom: 40px;
+}
+.overlay-wa-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: #25d366; color: #fff;
+  border: none; border-radius: 50px; cursor: none;
+  font-family: 'DM Sans', sans-serif; font-size: 0.7rem;
+  font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase;
+  padding: 11px 22px; text-decoration: none;
+  transition: background 0.18s, transform 0.15s, box-shadow 0.18s;
+  box-shadow: 0 4px 16px rgba(37,211,102,0.3);
+}
+.overlay-wa-btn:hover { background: #1ebe5a; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(37,211,102,0.4); }
+.overlay-wa-hint {
+  font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--gray); font-weight: 400;
+}
 
 /* mobile */
 @media (max-width:700px) {
@@ -752,8 +804,7 @@ mark {
   .add-modal-header { padding: 24px 24px 0; }
   .add-modal-body { padding: 20px 24px 28px; }
   .field-row { grid-template-columns: 1fr; gap: 0; }
-  .add-self-fab { bottom: 70px; right: 16px; }
-  .add-self-fab-label { display: none; }
+  .add-self-fab { bottom: 70px; right: 16px; padding: 0 16px; font-size: 0.7rem; }
 }
 
 /* ══════════════════════════════════════════
@@ -1022,6 +1073,10 @@ mark {
     <p class="overlay-eyebrow" id="overlayEyebrow">Details</p>
     <h2 class="overlay-title" id="overlayTitle"></h2>
     <p class="overlay-meta" id="overlayMeta"></p>
+    <div class="overlay-wa-row" id="overlayWaRow" style="display:none">
+      <a class="overlay-wa-btn" id="overlayWaBtn" href="#" target="_blank" rel="noopener"></a>
+      <span class="overlay-wa-hint">Tap to join the yeshiva WhatsApp group</span>
+    </div>
     <div class="overlay-controls">
       <div class="ov-search-wrap">
         <input type="search" class="ov-search" id="overlaySearch" placeholder="Filter by name&hellip;" autocomplete="off"/>
@@ -1073,6 +1128,25 @@ const ALL_YESHIVA_NAMES = ["Yeshivat Milafafon Tzafon", "Orayta", "Shaalvim", "R
 
 let EXTRA_STUDENTS = JSON.parse(localStorage.getItem('extra_students') || '[]');
 let EXTRA_YESHIVOT = JSON.parse(localStorage.getItem('extra_yeshivot') || '[]');
+
+// ── WhatsApp group links per yeshiva (from the corecert spreadsheet) ─
+const YESHIVA_WHATSAPP = {
+  'AISH GESHER': 'https://chat.whatsapp.com/CP6KSsmEgbL3CvpVfwbhMN?mode=hqctcla',
+  'Eretz HaTzvi': 'https://chat.whatsapp.com/DUhqIyR8jOT3ritaErIXXi?mode=gi_t',
+  'Gush - Yeshivat Har Etzion': 'https://chat.whatsapp.com/HtGzumUKRfLGd1oqXio8Sl?mode=gi_t',
+  'HaKotel': 'https://chat.whatsapp.com/G1fmgTJwQtt1YIhepX1hu7?mode=hq2tcli',
+  'Lev HaTorah': 'https://chat.whatsapp.com/IRR7PHTTSDNCM8FqIcUl0u?mode=gi_t',
+  'Mitzpe Yericho': 'https://chat.whatsapp.com/I7HcaJa4UlDBPibKAwGUkT',
+  'Migdal HaTorah': 'https://chat.whatsapp.com/JyUp5zC2kLjKWMWt5jD5Az?mode=gi_t',
+  'Netiv Aryeh': 'https://chat.whatsapp.com/DMM17bCOuRtKX0YggOhe9W',
+  'Orayta': 'https://chat.whatsapp.com/Ku46uMbJxOaJBzjqQPnPzC?mode=hq2tcli',
+  'Reishit': 'https://chat.whatsapp.com/KIMoHG6akcIKzP75LZ1bjM?mode=gi_t',
+  'Shaalvim': 'https://chat.whatsapp.com/H1AZBReUZpFCLUInkJ1yGu',
+  'Torah Tech': 'https://chat.whatsapp.com/E9bZH9PlOwbAAZuou94156?mode=gi_t',
+  "Torah V'avodah (TVA)": 'https://chat.whatsapp.com/B6nfBGdDlKu2WOlU06hplm?mode=gi_t',
+  'Torat Shraga': 'https://chat.whatsapp.com/FMp4OjCmq2r5yV84UweJR1?mode=hq2tcla',
+  'Yeshivat Milafafon Tzafon': 'https://chat.whatsapp.com/LdTqovlGVDhAxSzmEstHmH?mode=gi_t',
+};
 
 // ── High-school name aliases (maps any variant → canonical name) ─────
 // 'hasmonean' entry ensures correct casing even if user types all-caps
@@ -1216,9 +1290,16 @@ function renderSearch(q){
 
 // ── Yeshivot grid ────────────────────────────────────────────────────
 let yeshivotDone=false, compareSet=new Set();
+const WA_ICON = `<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>`;
+
 function renderYeshivotGrid(){
   const grid=document.getElementById('yeshivotGrid');
   grid.innerHTML=''; yeshivotDone=true;
+  // "Add Yourself / New Yeshiva" card goes FIRST
+  const addCard=document.createElement('div'); addCard.className='yeshiva-card add-yeshiva-card';
+  addCard.innerHTML=`<div class="yc-add-icon">+</div><div class="yc-name">Add New Yeshiva</div><div class="yc-sub">Not on the list? Add it here</div>`;
+  addCard.addEventListener('click',()=>openAddModal('yeshiva',''));
+  grid.appendChild(addCard);
   const yeshivot=getYeshivot();
   const max=yeshivot[0][1];
   yeshivot.forEach(([name,count],i)=>{
@@ -1226,19 +1307,17 @@ function renderYeshivotGrid(){
     card.dataset.yeshiva=name;
     const pct=(count/max*100).toFixed(1);
     const isExtra = EXTRA_YESHIVOT.includes(name);
-    card.innerHTML=`<div class="yc-count">${count}</div><div class="yc-name">${esc(name)}${isExtra?'<span class="new-badge" style="margin-left:8px;vertical-align:middle">NEW</span>':''}</div><div class="yc-sub">${count===1?'1 student':count+' students'}</div><div class="yc-bar" style="width:0%"></div>`;
+    const waLink = YESHIVA_WHATSAPP[name];
+    const waHtml = waLink ? `<a class="yc-wa-btn" href="${esc(waLink)}" target="_blank" rel="noopener" title="Join WhatsApp group">${WA_ICON} Join Group</a>` : '';
+    card.innerHTML=`${waHtml}<div class="yc-count">${count}</div><div class="yc-name">${esc(name)}${isExtra?'<span class="new-badge" style="margin-left:8px;vertical-align:middle">NEW</span>':''}</div><div class="yc-sub">${count===1?'1 student':count+' students'}</div><div class="yc-bar" style="width:0%"></div>`;
     card.addEventListener('click', e=>{
+      if(e.target.closest('.yc-wa-btn')) return;
       if(e.shiftKey||e.ctrlKey||e.metaKey) toggleCompare(name,card);
       else openOverlay('yeshiva',name);
     });
     grid.appendChild(card);
     setTimeout(()=>{card.querySelector('.yc-bar').style.width=pct+'%';},i*30+100);
   });
-  // Add "Add Yeshiva" card
-  const addCard=document.createElement('div'); addCard.className='yeshiva-card add-yeshiva-card';
-  addCard.innerHTML=`<div class="yc-add-icon">+</div><div class="yc-name">Add New Yeshiva</div><div class="yc-sub">Not on the list?</div>`;
-  addCard.addEventListener('click',()=>openAddModal('yeshiva',''));
-  grid.appendChild(addCard);
 }
 
 // ── HS grid ──────────────────────────────────────────────────────────
@@ -1283,6 +1362,12 @@ function openOverlay(type,name){
   document.getElementById('overlayEyebrow').textContent='Yeshiva';
   document.getElementById('overlayTitle').textContent=name;
   document.getElementById('overlayMeta').textContent=overlayStudents.length+(overlayStudents.length===1?' student enrolled':' students enrolled');
+  // WhatsApp group button
+  const waLink = YESHIVA_WHATSAPP[name];
+  const waRow = document.getElementById('overlayWaRow');
+  const waBtn = document.getElementById('overlayWaBtn');
+  if(waLink){ waBtn.href=waLink; waBtn.innerHTML=WA_ICON+' Join WhatsApp Group'; waRow.style.display='flex'; }
+  else { waRow.style.display='none'; }
   document.getElementById('overlaySearch').value='';
   document.querySelectorAll('.sort-btn').forEach((b,i)=>b.classList.toggle('active',i===0));
   buildSchoolChips(overlayStudents,'high_school');
@@ -1300,6 +1385,7 @@ function openHsOverlay(hs){
   document.getElementById('overlayEyebrow').textContent='High School';
   document.getElementById('overlayTitle').textContent=canonicalHs;
   document.getElementById('overlayMeta').textContent=overlayStudents.length+' students across '+new Set(overlayStudents.map(s=>s.yeshiva)).size+' yeshivot';
+  document.getElementById('overlayWaRow').style.display='none';
   document.getElementById('overlaySearch').value='';
   document.querySelectorAll('.sort-btn').forEach((b,i)=>b.classList.toggle('active',i===0));
   buildSchoolChips(overlayStudents,'yeshiva');
@@ -1637,8 +1723,9 @@ renderSearch('');
 </div>
 
 <!-- ═══ FAB ═══ -->
-<button class="add-self-fab" onclick="openAddModal('student','')" title="Add yourself">+</button>
-<span class="add-self-fab-label">Add yourself</span>
+<button class="add-self-fab" onclick="openAddModal('student','')" title="Add yourself">
+  <span class="add-self-fab-icon">+</span> Add Yourself
+</button>
 
 </body>
 </html>
