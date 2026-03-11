@@ -12,6 +12,11 @@
 <meta property="og:title" content="Yeshiva Directory 2026–2027">
 <meta property="og:description" content="Find any student in the Yeshiva Directory for the 2026–2027 year.">
 <meta property="og:type" content="website">
+<meta property="og:url" content="https://yeshiva-seven.vercel.app/">
+<meta property="og:image" content="https://yeshiva-seven.vercel.app/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Yeshiva Directory 2026–2027">
+<meta name="twitter:description" content="Find any student in the Yeshiva & Seminary Directory for 2026–2027.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:ital,wght@0,200;0,300;0,400;1,300&display=swap" rel="stylesheet">
 <!-- Supabase JS SDK (loaded early so supabaseClient.js can use it) -->
@@ -1296,6 +1301,125 @@ input, select, textarea {
 @media (max-width: 768px) {
   .wa-filter-row, .wa-groups-grid { padding-left: 16px; padding-right: 16px; }
 }
+
+/* ── FIX #3: Reduce blank gap on Yeshivot page ── */
+.yeshivot-hero { padding-bottom: 24px; }
+.institution-section-header { padding-top: 12px; }
+
+/* ── FIX #4: Reduce blank gap on Stats page ── */
+.stats-hero { padding-bottom: 24px; }
+.stats-tabs { padding-top: 0; }
+
+/* ── FIX #5/#16: Phone number links ── */
+.phone-link {
+  color: var(--gray);
+  text-decoration: none;
+  font-variant-numeric: tabular-nums;
+  font-size: inherit;
+  font-weight: 300;
+}
+.phone-link:hover { color: var(--accent); text-decoration: underline; }
+
+/* ── FIX #17: Copy phone button ── */
+.phone-copy-btn {
+  background: none; border: none; cursor: pointer;
+  color: var(--mid); font-size: 0.72rem; padding: 0 4px;
+  vertical-align: middle; opacity: 0; transition: opacity 0.15s, color 0.15s;
+  line-height: 1;
+}
+.result-item:hover .phone-copy-btn,
+.overlay-item:hover .phone-copy-btn { opacity: 1; }
+.phone-copy-btn:hover { color: var(--accent); }
+
+/* ── Toast notification ── */
+.toast {
+  position: fixed; bottom: 80px; left: 50%;
+  transform: translateX(-50%) translateY(12px);
+  background: var(--black); color: var(--bg);
+  padding: 8px 20px; border-radius: 50px;
+  font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase;
+  opacity: 0; transition: opacity 0.22s, transform 0.22s;
+  pointer-events: none; z-index: 1200; white-space: nowrap;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── FIX #6: Student detail modal ── */
+.student-modal-backdrop {
+  position: fixed; inset: 0; z-index: 700;
+  background: rgba(17,16,16,0.4); backdrop-filter: blur(4px);
+  opacity: 0; pointer-events: none; transition: opacity 0.22s;
+}
+.student-modal-backdrop.open { opacity: 1; pointer-events: all; }
+.student-modal {
+  position: fixed; top: 50%; left: 50%;
+  transform: translate(-50%, -46%) scale(0.96);
+  z-index: 701; width: min(400px, calc(100vw - 32px));
+  background: var(--bg); border: 1px solid var(--line);
+  border-radius: 8px; padding: 28px 32px 32px;
+  box-shadow: 0 24px 72px rgba(0,0,0,0.2);
+  opacity: 0; pointer-events: none;
+  transition: transform 0.28s cubic-bezier(0.34,1.4,0.64,1), opacity 0.22s;
+}
+.student-modal.open { transform: translate(-50%,-50%) scale(1); opacity: 1; pointer-events: all; }
+.student-modal .modal-close { position: absolute; top: 14px; right: 16px; }
+.smd-name {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 1.8rem; font-weight: 400; line-height: 1.1;
+  letter-spacing: -0.01em; color: var(--black); margin-bottom: 20px;
+  text-transform: capitalize;
+}
+.smd-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 0; border-bottom: 1px solid var(--line);
+  font-size: 0.82rem;
+}
+.smd-row:last-child { border-bottom: none; }
+.smd-label {
+  font-size: 0.6rem; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--mid); min-width: 80px; font-weight: 400;
+}
+.smd-phone-row { display: flex; align-items: center; gap: 8px; }
+
+/* Make result rows look clickable */
+.result-item { cursor: pointer; }
+.result-item:hover .result-name { color: var(--accent); }
+
+/* ── FIX #7: Compare button on institution cards ── */
+.yc-compare-btn {
+  position: absolute; bottom: 14px; right: 14px;
+  font-size: 0.58rem; letter-spacing: 0.08em; text-transform: uppercase;
+  background: none; border: 1px solid var(--line); color: var(--gray);
+  border-radius: 50px; padding: 4px 10px; cursor: pointer;
+  font-family: inherit; font-weight: 400;
+  transition: background 0.14s, color 0.14s, border-color 0.14s;
+  opacity: 0; z-index: 3;
+}
+.yeshiva-card:hover .yc-compare-btn { opacity: 1; }
+.yc-compare-btn:hover { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+.yc-compare-btn.selected { background: var(--accent); color: var(--bg); border-color: var(--accent); opacity: 1; }
+@media (hover: none) {
+  .yc-compare-btn { opacity: 1; }
+}
+
+/* ── FIX #10: Stronger active nav tab ── */
+.nav-btn.active {
+  color: var(--black);
+  font-weight: 600;
+}
+.nav-btn.active::after {
+  transform: scaleX(1);
+  height: 2.5px;
+  background: var(--accent);
+}
+
+/* ── FIX #11: FAB / footer overlap ── */
+#footerRight { padding-right: 170px; }
+@media (max-width: 768px) {
+  .add-self-fab {
+    bottom: calc(max(16px, env(safe-area-inset-bottom)) + 52px) !important;
+  }
+  #footerRight { padding-right: 0; }
+}
 </style>
 </head>
 <body>
@@ -2119,6 +2243,7 @@ function switchView(name){
   document.getElementById('nav'+name).classList.add('active');
   window.scrollTo(0,0);
   if(name!=='Yeshivot') clearCompare();
+  if(name==='Search')   clearSearch();
   if(name==='Yeshivot') renderYeshivotGrid();
   if(name==='Hs')       renderHsGrid();
   if(name==='Stats')    renderStats('yeshiva');
@@ -2166,6 +2291,93 @@ function esc(s){
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+// ── Phone formatting ──────────────────────────────────────────────────
+function formatPhone(raw) {
+  if (!raw || !raw.trim()) return '';
+  const digits = raw.replace(/\D/g, '');
+  if (!digits) return raw.trim();
+  // US 10-digit
+  if (digits.length === 10) {
+    return `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`;
+  }
+  // US 11-digit starting with 1
+  if (digits.length === 11 && digits[0] === '1') {
+    return `+1 (${digits.slice(1,4)}) ${digits.slice(4,7)}-${digits.slice(7)}`;
+  }
+  // UK: 447xxxxxxxxx (12 digits starting 44)
+  if (digits.length === 12 && digits.startsWith('44')) {
+    const local = digits.slice(2);
+    return `+44 ${local.slice(0,4)} ${local.slice(4)}`;
+  }
+  // Israeli: 972xxxxxxxxx
+  if (digits.length >= 11 && digits.startsWith('972')) {
+    const local = digits.slice(3);
+    return `+972 ${local.slice(0,2)}-${local.slice(2,5)}-${local.slice(5)}`;
+  }
+  // Other international: 11–15 digits → add +
+  if (digits.length >= 11) return '+' + digits;
+  return raw.replace(/[|]/g, '').trim();
+}
+
+function phoneHtml(raw) {
+  if (!raw || !raw.trim()) return '';
+  const formatted = formatPhone(raw);
+  if (!formatted) return '';
+  const digits = raw.replace(/\D/g, '');
+  let tel;
+  if (digits.length > 11 || (digits.length === 11 && digits[0] === '1')) {
+    tel = '+' + digits;
+  } else {
+    tel = digits;
+  }
+  return `<a href="tel:${esc(tel)}" class="phone-link" onclick="event.stopPropagation()">${esc(formatted)}</a>`;
+}
+
+function copyToClipboard(text) {
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).catch(() => _fallbackCopy(text));
+  } else {
+    _fallbackCopy(text);
+  }
+  showToast('Copied!');
+}
+function _fallbackCopy(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); } catch(e) {}
+  document.body.removeChild(ta);
+}
+function showToast(msg) {
+  const existing = document.querySelector('.toast');
+  if (existing) existing.remove();
+  const t = document.createElement('div');
+  t.className = 'toast'; t.textContent = msg;
+  document.body.appendChild(t);
+  // Double requestAnimationFrame ensures the element is in the DOM before
+  // adding the 'show' class so the CSS transition fires correctly.
+  requestAnimationFrame(() => { requestAnimationFrame(() => { t.classList.add('show'); }); });
+  setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 300); }, 1800);
+}
+
+// ── Student detail modal ──────────────────────────────────────────────
+function openStudentDetail(s) {
+  document.getElementById('studentModalName').textContent = s.name;
+  const hs = normalizeHsName(s.high_school) || '—';
+  const dispYeshiva = normalizeYeshivaName(s.yeshiva);
+  const phoneRow = s.phone ? `<div class="smd-row"><span class="smd-label">Phone</span><span class="smd-phone-row">${phoneHtml(s.phone)}<button class="phone-copy-btn" onclick="copyToClipboard('${esc(formatPhone(s.phone)||s.phone)}')" title="Copy phone number" aria-label="Copy phone number">⧉</button></span></div>` : '';
+  document.getElementById('studentModalDetail').innerHTML = `
+    <div class="smd-row"><span class="smd-label">High School</span><span>${esc(hs)}</span></div>
+    <div class="smd-row"><span class="smd-label">Institution</span><span class="tag tag-yeshiva" style="cursor:pointer" onclick="closeStudentModal();openOverlay('yeshiva','${esc(s.yeshiva)}')">${esc(dispYeshiva)}</span></div>
+    ${phoneRow}`;
+  document.getElementById('studentModal').classList.add('open');
+  document.getElementById('studentModalBackdrop').classList.add('open');
+}
+function closeStudentModal() {
+  document.getElementById('studentModal').classList.remove('open');
+  document.getElementById('studentModalBackdrop').classList.remove('open');
+}
+
 // ── Search view ──────────────────────────────────────────────────────
 const $si=document.getElementById('searchInput');
 const $sc=document.getElementById('searchClear');
@@ -2191,16 +2403,22 @@ function renderSearch(q){
     const badge = (s._added && (s._createdAt ? isWithin48Hours(s._createdAt) : true))
       ? '<span class="new-badge">NEW</span>' : '';
     const dispYeshiva = normalizeYeshivaName(s.yeshiva);
+    const phoneStr = s.phone ? phoneHtml(s.phone) : '';
+    const copyBtn = s.phone ? `<button class="phone-copy-btn" onclick="copyToClipboard('${esc(formatPhone(s.phone)||s.phone)}')" title="Copy phone number" aria-label="Copy phone number">⧉</button>` : '';
     li.innerHTML=`
       <div>
         <div class="result-name"><span class="student-name">${hl(s.name,q)}</span> ${badge}</div>
         <div class="result-path">
-          <span class="tag tag-hs" onclick="openHsOverlay('${esc(normalizeHsName(s.high_school)||'')}')">${esc(hs)}</span>
+          <span class="tag tag-hs" onclick="event.stopPropagation();openHsOverlay('${esc(normalizeHsName(s.high_school)||'')}')">${esc(hs)}</span>
           <span class="result-arrow">&#8594;</span>
-          <span class="tag tag-yeshiva" onclick="openOverlay('yeshiva','${esc(s.yeshiva)}')">${esc(dispYeshiva)}</span>
+          <span class="tag tag-yeshiva" onclick="event.stopPropagation();openOverlay('yeshiva','${esc(s.yeshiva)}')">${esc(dispYeshiva)}</span>
         </div>
       </div>
-      <div class="result-phone">${esc(s.phone)||''}</div>`;
+      <div class="result-phone">${phoneStr}${copyBtn}</div>`;
+    li.addEventListener('click', (e) => {
+      if(e.target.closest('.tag,.inline-add-btn,.phone-copy-btn,.phone-link')) return;
+      openStudentDetail(s);
+    });
     $rl.appendChild(li);
   });
 }
@@ -2227,13 +2445,13 @@ function _renderInstCards(grid, list, maxCount) {
     const isExtra = EXTRA_YESHIVOT.includes(name);
     const waLink = YESHIVA_WHATSAPP[name];
     const waHtml = waLink ? `<a class="yc-wa-btn" href="${esc(waLink)}" target="_blank" rel="noopener" title="Join WhatsApp group">${WA_ICON} Join Group</a>` : '';
-    card.innerHTML=`${waHtml}<div class="yc-count">${count}</div><div class="yc-name">${esc(name)}${isExtra?'<span class="new-badge" style="margin-left:8px;vertical-align:middle">NEW</span>':''}</div><div class="yc-sub">${count===1?'1 student':count+' students'}</div><div class="yc-bar" style="width:0%"></div>`;
+    card.innerHTML=`${waHtml}<div class="yc-count">${count}</div><div class="yc-name">${esc(name)}${isExtra?'<span class="new-badge" style="margin-left:8px;vertical-align:middle">NEW</span>':''}</div><div class="yc-sub">${count===1?'1 student':count+' students'}</div><div class="yc-bar" style="width:0%"></div><button class="yc-compare-btn" title="Select to compare" onclick="event.stopPropagation();toggleCompare('${esc(name)}',this.closest('.yeshiva-card'))">⊕ Compare</button>`;
     card.addEventListener('click', e=>{
-      if(e.target.closest('.yc-wa-btn')) return;
+      if(e.target.closest('.yc-wa-btn,.yc-compare-btn')) return;
       if(e.shiftKey||e.ctrlKey||e.metaKey) toggleCompare(name,card);
       else openOverlay('yeshiva',name);
     });
-    if(compareSet.has(name)){card.style.outline='2px solid var(--accent)';card.style.outlineOffset='2px';}
+    if(compareSet.has(name)){card.style.outline='2px solid var(--accent)';card.style.outlineOffset='2px';card.querySelector('.yc-compare-btn').classList.add('selected');}
     grid.appendChild(card);
     setTimeout(()=>{card.querySelector('.yc-bar').style.width=pct+'%';},i*30+100);
   });
@@ -2443,7 +2661,9 @@ function renderOverlayList(students,query){
     const li=document.createElement('li'); li.className='overlay-item'; li.style.animationDelay=(i*16)+'ms';
     const badge=s._added?'<span class="new-badge">NEW</span>':'';
     const midCol = overlayYeshivaName ? esc(normalizeHsName(s.high_school)||'—') : esc(normalizeYeshivaName(s.yeshiva)||'—');
-    li.innerHTML=`<span class="oi-name student-name">${esc(s.name)} ${badge}</span><span class="oi-hs">${midCol}</span><span class="oi-phone">${esc(s.phone||'')}</span>`;
+    const phoneStr = s.phone ? phoneHtml(s.phone) : '';
+    const copyBtn = s.phone ? `<button class="phone-copy-btn" onclick="copyToClipboard('${esc(formatPhone(s.phone)||s.phone)}')" title="Copy phone number" aria-label="Copy phone number">⧉</button>` : '';
+    li.innerHTML=`<span class="oi-name student-name">${esc(s.name)} ${badge}</span><span class="oi-hs">${midCol}</span><span class="oi-phone">${phoneStr}${copyBtn}</span>`;
     list.appendChild(li);
   });
 }
@@ -2456,8 +2676,16 @@ function closeOverlay(){
 
 // ── Compare ──────────────────────────────────────────────────────────
 function toggleCompare(name,card){
-  if(compareSet.has(name)){compareSet.delete(name);card.style.outline='';card.style.outlineOffset='';}
-  else{compareSet.add(name);card.style.outline='2px solid var(--accent)';card.style.outlineOffset='2px';}
+  const btn = card ? card.querySelector('.yc-compare-btn') : null;
+  if(compareSet.has(name)){
+    compareSet.delete(name);
+    if(card){card.style.outline='';card.style.outlineOffset='';}
+    if(btn) btn.classList.remove('selected');
+  } else {
+    compareSet.add(name);
+    if(card){card.style.outline='2px solid var(--accent)';card.style.outlineOffset='2px';}
+    if(btn) btn.classList.add('selected');
+  }
   updateCompareBar();
 }
 function updateCompareBar(){
@@ -2471,7 +2699,11 @@ function updateCompareBar(){
 }
 function clearCompare(){
   compareSet.clear();
-  document.querySelectorAll('.yeshiva-card').forEach(c=>{c.style.outline='';c.style.outlineOffset='';});
+  document.querySelectorAll('.yeshiva-card').forEach(c=>{
+    c.style.outline='';c.style.outlineOffset='';
+    const btn = c.querySelector('.yc-compare-btn');
+    if(btn) btn.classList.remove('selected');
+  });
   updateCompareBar();
 }
 function openCompare(){
@@ -2502,7 +2734,7 @@ function openCompare(){
     groups.forEach((_,gi)=>{
       const s=sorted[gi][i];
       const cell=document.createElement('div'); cell.className='compare-cell';
-      if(s) cell.innerHTML=`<span class="student-name">${esc(s.name)}</span><div class="cc-hs">${esc(s.high_school||'')}</div>${s.phone?`<div class="cc-phone">${esc(s.phone)}</div>`:''}`; 
+      if(s) cell.innerHTML=`<span class="student-name">${esc(s.name)}</span><div class="cc-hs">${esc(s.high_school||'')}</div>${s.phone?`<div class="cc-phone">${phoneHtml(s.phone)}</div>`:''}`;  
       else cell.innerHTML='<span style="color:var(--line)">&mdash;</span>';
       row.appendChild(cell);
     });
@@ -2877,7 +3109,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
 // ── Keyboard ─────────────────────────────────────────────────────────
 document.addEventListener('keydown', e=>{
   if(e.key==='Escape'){
-    closeOverlay(); closeCompare();
+    closeOverlay(); closeCompare(); closeStudentModal();
     if(document.getElementById('addModal').classList.contains('open')) closeAddModal();
   }
   if(e.key==='/'&&document.activeElement!==$si){e.preventDefault();switchView('Search');$si.focus();}
@@ -3033,6 +3265,14 @@ loadApprovedSubmissions().then(() => subscribeToSubmissions());
 <button class="add-self-fab" onclick="openAddModal('student','')" title="Add yourself">
   <span class="add-self-fab-icon">+</span> Add Yourself
 </button>
+
+<!-- ═══ STUDENT DETAIL MODAL ═══ -->
+<div class="student-modal-backdrop" id="studentModalBackdrop" onclick="closeStudentModal()"></div>
+<div class="student-modal" id="studentModal" role="dialog" aria-modal="true" aria-labelledby="studentModalName">
+  <button class="modal-close" onclick="closeStudentModal()" aria-label="Close">&times;</button>
+  <div class="smd-name" id="studentModalName"></div>
+  <div id="studentModalDetail"></div>
+</div>
 
 </body>
 </html>
