@@ -2257,7 +2257,7 @@ function renderYeshivotGrid(){
     // Add-new card
     const addCard=document.createElement('div'); addCard.className='yeshiva-card add-yeshiva-card';
     addCard.innerHTML=`<div class="yc-add-icon">+</div><div class="yc-name">Add New Yeshiva</div><div class="yc-sub">Not on the list? Add it here</div>`;
-    addCard.addEventListener('click',()=>openAddModal('yeshiva',''));
+    addCard.addEventListener('click',()=>openAddModal('yeshiva','','yeshiva'));
     grid.appendChild(addCard);
     _renderInstCards(grid, yeshivot, maxCount);
   }
@@ -2269,7 +2269,7 @@ function renderYeshivotGrid(){
     // Add-new card for seminary
     const addCard2=document.createElement('div'); addCard2.className='yeshiva-card add-yeshiva-card';
     addCard2.innerHTML=`<div class="yc-add-icon">+</div><div class="yc-name">Add New Seminary</div><div class="yc-sub">Not on the list? Add it here</div>`;
-    addCard2.addEventListener('click',()=>openAddModal('yeshiva',''));
+    addCard2.addEventListener('click',()=>openAddModal('yeshiva','','seminary'));
     grid.appendChild(addCard2);
     _renderInstCards(grid, sems, maxCount);
   }
@@ -2591,7 +2591,7 @@ function resetAddForm() {
   if(yInputEl) yInputEl.placeholder = 'e.g. Shaalvim';
 }
 
-function openAddModal(mode, prefillName){
+function openAddModal(mode, prefillName, prefillInstType){
   addModalMode = mode;
   const modal = document.getElementById('addModal');
   const title = document.getElementById('addModalTitle');
@@ -2607,6 +2607,10 @@ function openAddModal(mode, prefillName){
     studentFields.style.display = 'block';
     yeshivaFields.style.display = 'none';
     if(prefillName) document.getElementById('addName').value = prefillName;
+    // Apply pre-filled institution type (e.g. when coming from seminary section)
+    if(prefillInstType === 'seminary'){
+      setInstType('seminary', document.getElementById('instTypeSem'));
+    }
     // Initialize yeshiva autocomplete
     yeshivaSelectedValue = '';
     const yInput = document.getElementById('addYeshivaInput');
@@ -2617,7 +2621,8 @@ function openAddModal(mode, prefillName){
     initYeshivaAutocomplete();
     initHsAutocomplete();
   } else {
-    title.textContent = 'Add New Institution';
+    const typeLabel = prefillInstType === 'seminary' ? 'Seminary' : 'Yeshiva';
+    title.textContent = 'Add New ' + typeLabel;
     if(subEl) subEl.textContent = '';
     studentFields.style.display = 'none';
     yeshivaFields.style.display = 'block';
