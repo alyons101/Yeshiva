@@ -1455,6 +1455,162 @@ input, select, textarea {
   }
   #footerRight { padding-right: 0; }
 }
+
+/* ── COMPREHENSIVE MOBILE UX OPTIMIZATION ── */
+
+/* Cursor overrides for touch devices */
+@media (hover: none) and (pointer: coarse) {
+  button, a, [onclick], .nav-btn, .result-item, .yeshiva-card, .hs-card,
+  .sort-btn, .stats-tab, .alpha-btn, .school-chip, .qs-item, .tag,
+  .search-clear, .overlay-close, .modal-close, .inline-add-btn,
+  .phone-copy-btn, .share-btn, .smd-share-btn, .compare-clear,
+  .compare-go, .inst-type-btn, .yc-compare-btn, .yc-wa-btn,
+  .add-self-fab {
+    cursor: pointer !important;
+  }
+  /* Phone copy and share buttons always visible on touch */
+  .phone-copy-btn, .share-btn { opacity: 1 !important; }
+  /* Remove padding-left hover shift that doesn't suit touch */
+  .result-item:hover { padding-left: 0; }
+}
+
+/* Active/tap feedback states (touch devices) */
+@media (hover: none) {
+  .result-item:active { background: var(--cream); }
+  .yeshiva-card:active { background: var(--ink); transform: translateY(-1px); }
+  .yeshiva-card:active .yc-name,
+  .yeshiva-card:active .yc-sub { color: var(--bg); }
+  .yeshiva-card:active .yc-count { color: var(--accent); }
+  .hs-card:active { background: var(--black); transform: translateY(-1px); }
+  .hs-card:active .hsc-name, .hs-card:active .hsc-sub { color: var(--bg); }
+  .hs-card:active .hsc-count { color: var(--accent); }
+  .qs-item:active { background: var(--cream); }
+  .sort-btn:active, .stats-tab:active, .inst-type-btn:active { background: var(--cream); color: var(--black); }
+  .alpha-btn:active { background: var(--black); color: var(--bg); border-color: var(--black); }
+  .school-chip:active { background: var(--black); color: var(--bg); }
+  .tag:active { background: var(--black); color: var(--bg); }
+  .nav-btn:active { color: var(--black); }
+  .smd-share-btn:active { background: var(--black); color: var(--bg); border-color: var(--black); }
+  .smd-share-btn.wa:active { background: #25d366; color: white; border-color: #25d366; }
+}
+
+/* Suppress hover-induced lift on touch devices (prevents stuck hover states on iOS) */
+@media (hover: none) and (pointer: coarse) {
+  .yeshiva-card:hover { transform: none; }
+  .hs-card:hover { transform: none; }
+}
+
+/* ── Mobile search & layout improvements (≤768px) ── */
+@media (max-width: 768px) {
+  /* Search hero section */
+  .search-hero {
+    padding: 110px 16px 28px;
+    max-width: 100%;
+  }
+  .search-title {
+    font-size: clamp(2.4rem, 7.5vw, 3.6rem);
+    margin-bottom: 32px;
+  }
+  /* Search box full-width */
+  .search-box { max-width: 100%; }
+  .search-input {
+    padding: 16px 52px 16px 0;
+    min-height: 52px;
+  }
+  /* Search clear button — proper touch target */
+  .search-clear {
+    cursor: pointer;
+    padding: 0;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+  }
+  /* Result items — comfortable touch height */
+  .result-item {
+    padding: 20px 0;
+    min-height: 72px;
+    gap: 12px;
+  }
+  .result-name { font-size: 1.25rem; line-height: 1.3; }
+  /* Keep phone/share buttons always visible */
+  .result-item .phone-copy-btn,
+  .overlay-item .phone-copy-btn { opacity: 1; }
+  /* Quick stats — touch-friendly */
+  .qs-item {
+    cursor: pointer;
+    padding: 20px 0 20px 12px;
+    min-height: 72px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  /* Sort / filter buttons — adequate touch target */
+  .sort-btn, .stats-tab, .inst-type-btn {
+    min-height: 40px;
+    padding: 9px 14px;
+  }
+  /* Alpha jump buttons — slightly larger */
+  .alpha-btn {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    min-height: 28px;
+  }
+  /* Share buttons in student modal — full-width, easy to tap */
+  .smd-share-row { flex-direction: column; gap: 10px; }
+  .smd-share-btn { min-height: 48px; font-size: 0.78rem; padding: 12px; }
+  /* Student modal — bottom sheet on mobile */
+  .student-modal {
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    transform: translateY(16px) scale(1);
+    width: 100%;
+    border-radius: 20px 20px 0 0;
+    padding: 28px 24px max(28px, env(safe-area-inset-bottom));
+    max-height: 90dvh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .student-modal.open {
+    transform: translateY(0) scale(1);
+  }
+  /* Ensure modal close button has a comfortable tap area */
+  .student-modal .modal-close {
+    top: 12px;
+    right: 12px;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+  }
+  /* No-results — larger, clearer message */
+  .no-results { padding: 40px 0; }
+  .no-results-title { font-size: 1.25rem; }
+  .no-results-sub { font-size: 0.72rem; }
+  /* Overlay search wrap — full-width on mobile */
+  .ov-search-wrap { max-width: 100%; }
+}
+
+/* ── Small phones (≤479px) ── */
+@media (max-width: 479px) {
+  .search-hero { padding-top: 100px; padding-left: 12px; padding-right: 12px; }
+  .search-title { font-size: clamp(2rem, 8vw, 2.6rem); margin-bottom: 24px; }
+  .results-wrap { padding-left: 12px; padding-right: 12px; padding-bottom: 100px; }
+  .qs-item { padding-left: 8px; }
+  .qs-num { font-size: 1.8rem; }
+  .result-name { font-size: 1.1rem; }
+  .result-hs { font-size: 0.65rem; }
+  .tag { font-size: 0.62rem; padding: 3px 7px; }
+  .student-modal { padding: 24px 16px max(24px, env(safe-area-inset-bottom)); }
+  .smd-name { font-size: 1.5rem; }
+}
 </style>
 </head>
 <body>
@@ -1483,7 +1639,8 @@ input, select, textarea {
     <h1 class="search-title">Find anyone. <br><em>Instantly.</em></h1>
     <div class="search-box">
       <input type="search" class="search-input" id="searchInput"
-        placeholder="Type any name&hellip;" autocomplete="off" spellcheck="false" aria-label="Search students by name"/>
+        placeholder="Type any name&hellip;" autocomplete="off" spellcheck="false"
+        inputmode="search" aria-label="Search students by name"/>
       <button class="search-clear" id="searchClear" onclick="clearSearch()">&times;</button>
     </div>
     <p class="search-meta" id="searchMeta"></p>
@@ -1594,7 +1751,7 @@ input, select, textarea {
     </div>
     <div class="overlay-controls">
       <div class="ov-search-wrap">
-        <input type="search" class="ov-search" id="overlaySearch" placeholder="Filter by name&hellip;" autocomplete="off"/>
+        <input type="search" class="ov-search" id="overlaySearch" placeholder="Filter by name&hellip;" autocomplete="off" inputmode="search"/>
       </div>
       <div class="sort-group">
         <button class="sort-btn active" onclick="setSort('alpha',this)">A–Z</button>
@@ -2477,7 +2634,7 @@ const $sm=document.getElementById('searchMeta');
 const $rl=document.getElementById('resultsList');
 const $sp=document.getElementById('statePrompt');
 let deb;
-$si.addEventListener('input',()=>{ clearTimeout(deb); deb=setTimeout(()=>renderSearch($si.value),80); $sc.classList.toggle('visible',!!$si.value); });
+$si.addEventListener('input',()=>{ clearTimeout(deb); deb=setTimeout(()=>renderSearch($si.value),300); $sc.classList.toggle('visible',!!$si.value); });
 function clearSearch(){ $si.value=''; $sc.classList.remove('visible'); renderSearch(''); $si.focus(); }
 
 function renderSearch(q){
