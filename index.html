@@ -1647,6 +1647,11 @@ input, select, textarea {
     padding-bottom: 8px;
     width: 100%;
   }
+  /* Fix nav buttons: natural content width so container can scroll */
+  .nav-btn {
+    flex: none;
+    flex-shrink: 0;
+  }
 
   /* Stats bar chart: responsive, no horizontal overflow */
   .bar-chart {
@@ -1678,6 +1683,44 @@ input, select, textarea {
   .yeshivot-grid,
   .hs-grid,
   .wa-groups-grid { padding-bottom: 130px; }
+}
+
+/* ── iPhone-specific layout (≤480px) ── */
+@media (max-width: 480px) {
+  /* Stack brand + pill vertically so pill never overflows */
+  .header-row1 {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+  .header-brand {
+    font-size: 0.76rem;
+    letter-spacing: 0.12em;
+  }
+  .header-pill {
+    font-size: 0.52rem;
+    white-space: normal;
+    line-height: 1.3;
+  }
+
+  /* Quick stats: 2×2 grid instead of 4-in-a-row */
+  .quick-stats {
+    flex-wrap: wrap;
+  }
+  .qs-item {
+    flex: 0 0 50%;
+    border-right: none;
+    border-bottom: 1px solid var(--line);
+    padding-left: 12px !important; /* overrides inline style="padding-left:24px" on element */
+  }
+  .qs-item:nth-child(odd) {
+    border-right: 1px solid var(--line);
+  }
+  .qs-item:nth-child(3),
+  .qs-item:nth-child(4) {
+    border-bottom: none;
+  }
+  .qs-num { font-size: 1.8rem; }
 }
 </style>
 </head>
