@@ -35,8 +35,8 @@
 //     ON submissions FOR UPDATE
 //     USING (auth.role() = 'service_role');
 
-const SUPABASE_URL = 'YOUR_SUPABASE_URL';
-const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+const SUPABASE_URL = 'https://ljujfzodedvqqstwtmpi.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxqdWpmem9kZWR2cXFzdHd0bXBpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNDIzNTIsImV4cCI6MjA4ODcxODM1Mn0.vbgljIVf17T2clwGbvWm_0uAFlo-rMKRq4JSbhwWDo0';
 
 // Initialize the client only when real credentials are provided.
 // The app checks `supabaseDB !== null` before making any DB calls,
