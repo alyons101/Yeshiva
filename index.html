@@ -1830,7 +1830,14 @@ function normalizeHsName(name) {
 }
 
 // ── HS AUTOCOMPLETE ─────────────────────────────────────────────────
-const HS_PHONE_RE = /^\(?\d{3}/;
+// Returns true when the string consists entirely of phone-number characters (digits, +, -,
+// dots, whitespace, parentheses) with at least 7 digits — clearly a phone number, not a
+// school name like "300 Park School" or "(32nd Street Academy)".
+function isPhoneLike(s) {
+  if (!s) return false;
+  const t = s.trim();
+  return /^[+\d\s\-().]+$/.test(t) && t.replace(/\D/g, '').length >= 7;
+}
 const HS_HARDCODED = [
   'DRS','MTA','SAR Academy','HAFTR','TABC','JEC','Frisch','The Frisch School',
   'Ramaz','CHAT','JDS','Berman Hebrew Academy','ICJA','FYHS',
@@ -1842,7 +1849,7 @@ const HS_HARDCODED = [
 function getHsSchoolList() {
   const counts = {};
   getStudents().forEach(s => {
-    if (!s.high_school || HS_PHONE_RE.test(s.high_school)) return;
+    if (!s.high_school || isPhoneLike(s.high_school)) return;
     const n = normalizeHsName(s.high_school);
     counts[n] = (counts[n]||0)+1;
   });
@@ -1904,7 +1911,7 @@ function buildHsDropdown(input) {
   if(unrecWarn) unrecWarn.style.display = 'none';
 
   // Phone number check
-  if (HS_PHONE_RE.test(val.trim())) {
+  if (isPhoneLike(val)) {
     if(phoneWarn) phoneWarn.style.display = 'block';
     closeHsDropdown();
     return;
@@ -1984,7 +1991,7 @@ function initHsAutocomplete() {
       const schools = getHsSchoolList();
       const recognized = schools.some(([name]) => name.toLowerCase() === key);
       const unrecWarn = document.getElementById('hsUnrecognizedWarn');
-      if (!recognized && val && !HS_PHONE_RE.test(val) && unrecWarn) {
+      if (!recognized && val && !isPhoneLike(val) && unrecWarn) {
         unrecWarn.style.display = 'block';
       }
     }, 200);
@@ -2182,7 +2189,7 @@ function getHsList() {
   const counts = {};
   all.forEach(s => {
     if (!s.high_school) return;
-    if (HS_PHONE_RE.test(s.high_school)) return; // skip phone-like values
+    if (isPhoneLike(s.high_school)) return; // skip phone-like values
     const normalized = normalizeHsName(s.high_school);
     counts[normalized] = (counts[normalized]||0)+1;
   });
