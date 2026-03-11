@@ -257,6 +257,30 @@ mark {
   background: var(--accent); transition: width 0.5s cubic-bezier(0.22,1,0.36,1);
 }
 
+/* institution section headers inside the grid */
+.institution-section-header {
+  grid-column: 1 / -1; padding: 24px 0 12px;
+  border-top: 2px solid var(--line); margin-top: 8px;
+}
+.institution-section-header:first-child { border-top: none; margin-top: 0; }
+.institution-section-header h3 {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 1.5rem; font-weight: 300; letter-spacing: 0.02em;
+  color: var(--gray);
+}
+
+/* institution type toggle in add modal */
+.inst-type-toggle {
+  display: flex; gap: 0; margin-bottom: 10px;
+}
+.inst-type-btn {
+  font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase;
+  padding: 8px 16px; border: 1px solid var(--line); background: none;
+  color: var(--gray); cursor: none; font-family: inherit; font-weight: 400;
+  transition: background 0.14s, color 0.14s; margin-right: -1px;
+}
+.inst-type-btn.active { background: var(--black); color: var(--bg); border-color: var(--black); }
+
 /* ══════════════════
    HIGH SCHOOLS VIEW
 ══════════════════ */
@@ -1282,7 +1306,7 @@ input, select, textarea {
 <header class="header">
   <div class="header-row1">
     <span class="header-brand">Yeshiva &amp; Seminary 2026–27</span>
-    <span class="header-pill" id="headerPill">526 students &middot; 29 yeshivot</span>
+    <span class="header-pill" id="headerPill">Loading&hellip;</span>
   </div>
   <nav class="header-nav">
     <button class="nav-btn active" id="navSearch"    onclick="switchView('Search')">Search</button>
@@ -1313,16 +1337,16 @@ input, select, textarea {
           <div class="qs-label">Students</div>
         </div>
         <div class="qs-item" onclick="switchView('Yeshivot')" style="cursor:none;padding-left:24px">
-          <div class="qs-num" id="qsYeshivot">29</div>
+          <div class="qs-num" id="qsYeshivot">—</div>
           <div class="qs-label">Yeshivot</div>
+        </div>
+        <div class="qs-item" onclick="switchView('Yeshivot')" style="cursor:none;padding-left:24px">
+          <div class="qs-num" id="qsSems">—</div>
+          <div class="qs-label">Seminaries</div>
         </div>
         <div class="qs-item" onclick="switchView('Hs')" style="cursor:none;padding-left:24px">
           <div class="qs-num" id="qsHs">156</div>
           <div class="qs-label">High Schools</div>
-        </div>
-        <div class="qs-item" style="cursor:none;padding-left:24px">
-          <div class="qs-num" id="qsPhones">410</div>
-          <div class="qs-label">Phone Numbers</div>
         </div>
       </div>
       <p class="state-prompt">Start typing to find someone</p>
@@ -1341,9 +1365,14 @@ input, select, textarea {
 <div class="view" id="viewYeshivot">
   <div class="yeshivot-hero">
     <div>
-      <h2 class="yeshivot-title">All <em>Yeshivot</em></h2>
+      <h2 class="yeshivot-title">Yeshivot &amp; <em>Seminaries</em></h2>
     </div>
-    <span class="yeshivot-sub" id="yeshivotSub">29 programs &mdash; click any to explore &mdash; <strong class="compare-hint">⌃ ctrl+click to compare</strong></span>
+    <span class="yeshivot-sub" id="yeshivotSub">click any to explore &mdash; <strong class="compare-hint">⌃ ctrl+click to compare</strong></span>
+  </div>
+  <div class="wa-filter-row">
+    <button class="sort-btn active" id="instFilterAll" onclick="filterInstitutions('all',this)">All</button>
+    <button class="sort-btn" id="instFilterYeshivot" onclick="filterInstitutions('yeshiva',this)">Yeshivot</button>
+    <button class="sort-btn" id="instFilterSems" onclick="filterInstitutions('seminary',this)">Seminaries</button>
   </div>
   <div class="yeshivot-grid" id="yeshivotGrid">
     <div class="skeleton skeleton-card"></div>
@@ -1370,8 +1399,9 @@ input, select, textarea {
     <h2 class="stats-title">The <em>Numbers</em></h2>
   </div>
   <div class="stats-tabs">
-    <button class="stats-tab active" onclick="showStatTab('yeshiva',this)">By Yeshiva</button>
-    <button class="stats-tab" onclick="showStatTab('school',this)">By High School</button>
+    <button class="stats-tab active" data-tab="yeshiva" onclick="showStatTab('yeshiva',this)">By Yeshiva</button>
+    <button class="stats-tab" data-tab="seminary" onclick="showStatTab('seminary',this)">By Seminary</button>
+    <button class="stats-tab" data-tab="school" onclick="showStatTab('school',this)">By High School</button>
   </div>
   <div class="bar-chart" id="barChart"></div>
 </div>
@@ -1401,7 +1431,7 @@ input, select, textarea {
     <p class="overlay-meta" id="overlayMeta"></p>
     <div class="overlay-wa-row" id="overlayWaRow" style="display:none">
       <a class="overlay-wa-btn" id="overlayWaBtn" href="#" target="_blank" rel="noopener"></a>
-      <span class="overlay-wa-hint">Tap to join the yeshiva WhatsApp group</span>
+      <span class="overlay-wa-hint">Tap to join the WhatsApp group</span>
     </div>
     <div class="overlay-controls">
       <div class="ov-search-wrap">
@@ -1434,7 +1464,7 @@ input, select, textarea {
 <div class="compare-bar" id="compareBar">
   <span class="compare-bar-label">Selected</span>
   <span class="compare-count" id="compareCount">0</span>
-  <span class="compare-bar-label">yeshivot</span>
+  <span class="compare-bar-label">institutions</span>
   <button class="compare-clear" onclick="clearCompare()">Clear</button>
   <button class="compare-go" onclick="openCompare()">Compare &rarr;</button>
 </div>
@@ -1442,7 +1472,7 @@ input, select, textarea {
 <!-- FOOTER -->
 <footer class="footer">
   <span>Yeshiva Directory 2026&ndash;2027</span>
-  <span id="footerRight">526 students &middot; 29 yeshivot</span>
+  <span id="footerRight">Loading&hellip;</span>
 </footer>
 
 <script>
@@ -1643,6 +1673,16 @@ const YESHIVA_WHATSAPP = {
   'MTVA': 'https://chat.whatsapp.com/HpD8sAt3gC51MWWxmoUlLV?mode=gi_t',
   'Tiferet': 'https://chat.whatsapp.com/KQXubQb5chl2nguQMLKj4t?mode=gi_t',
 };
+
+// ── Seminary institution names ────────────────────────────────────────
+// All institution names that are female seminaries (not male yeshivot)
+const SEMINARY_NAMES = new Set([
+  'Amit','Amudim','Baer Miriam','Bar Ilan','Drisha','Eshel','Harova',
+  'Lindenbaum','MMY','MTC','MTVA',"Machon Ma'ayan",'Mechina Olamit',
+  'Meorot Yerushalayim','Michlalah','Midmo','Midreshet Lev','Midreshet Ora',
+  'Midreshet Tehillah','Migdal Oz',"Sha'alvim","Sharfman's",'Tiferet','Tomer',
+  'Nishmat','Ein Hanatziv','Kivunim','Midreshet Lindenbaum Darkaynu',
+]);
 
 // ── High-school name aliases (maps any variant → canonical name) ─────
 // 'hasmonean' entry ensures correct casing even if user types all-caps
@@ -1864,9 +1904,11 @@ function buildYeshivaDropdown(input) {
   const val = input.value.trim();
   if (!val) { closeYeshivaDropdown(); return; }
   const q = val.toLowerCase();
-  const yeshivot = getYeshivot(); // [[name, count], ...]
+  // Filter by current institution type selection
+  const allInst = addInstType === 'yeshiva' ? getYeshivotOnly() :
+                  addInstType === 'seminary' ? getSeminariesList() : getYeshivot();
 
-  const scored = yeshivot
+  const scored = allInst
     .map(([name, count]) => ({ name: normalizeYeshivaName(name), raw: name, count, score: scoreMatch(q, normalizeYeshivaName(name)) }))
     .filter(x => x.score > 0)
     .sort((a,b) => (b.score - a.score) || (b.count - a.count))
@@ -1879,7 +1921,8 @@ function buildYeshivaDropdown(input) {
   // Add "+ new" option
   const addItem = document.createElement('div');
   addItem.className = 'yeshiva-dropdown-item yeshiva-dropdown-add';
-  addItem.innerHTML = `+ Add "${esc(val)}" as new yeshiva`;
+  const typeLabel = addInstType === 'seminary' ? 'seminary' : 'yeshiva';
+  addItem.innerHTML = `+ Add "${esc(val)}" as new ${typeLabel}`;
   addItem.addEventListener('mousedown', e => {
     e.preventDefault();
     input.value = val;
@@ -1982,6 +2025,10 @@ function normalizeYeshivaName(name) {
   return YESHIVA_NAME_FIXES[stripped.toLowerCase()] || stripped;
 }
 
+function isSeminary(institutionName) {
+  return SEMINARY_NAMES.has(normalizeYeshivaName(institutionName || ''));
+}
+
 // ── FIX 1: spam yeshiva filter ────────────────────────────────────────
 const SPAM_YESHIVOT = ['Yeshivat Milafafon Tzafon'];
 
@@ -1992,7 +2039,19 @@ function getYeshivot() {
   const all = getStudents();
   const counts = {};
   all.forEach(s => { counts[s.yeshiva] = (counts[s.yeshiva]||0)+1; });
-  return Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+  return Object.entries(counts).sort((a,b)=>a[0].localeCompare(b[0]));
+}
+function getYeshivotOnly() {
+  const all = getStudents();
+  const counts = {};
+  all.forEach(s => { if(!isSeminary(s.yeshiva)) counts[s.yeshiva]=(counts[s.yeshiva]||0)+1; });
+  return Object.entries(counts).sort((a,b)=>a[0].localeCompare(b[0]));
+}
+function getSeminariesList() {
+  const all = getStudents();
+  const counts = {};
+  all.forEach(s => { if(isSeminary(s.yeshiva)) counts[s.yeshiva]=(counts[s.yeshiva]||0)+1; });
+  return Object.entries(counts).sort((a,b)=>a[0].localeCompare(b[0]));
 }
 function getHsList() {
   const all = getStudents();
@@ -2009,26 +2068,27 @@ function getHsList() {
 // ── FIX 4/12: update all reactive counters ────────────────────────────
 function updateCounters() {
   const students = getStudents();
-  const yeshivot = getYeshivot();
+  const yeshivotOnly = getYeshivotOnly();
+  const semsList = getSeminariesList();
   const hsList = getHsList();
   const count = students.length;
-  const yCount = yeshivot.length;
+  const yCount = yeshivotOnly.length;
+  const sCount = semsList.length;
   const hsCount = hsList.length;
-  const phoneCount = students.filter(s=>s.phone).length;
   const pill = document.getElementById('headerPill');
-  if(pill) pill.textContent = count + ' students \u00B7 ' + yCount + ' yeshivot';
+  if(pill) pill.textContent = count + ' students \u00B7 ' + yCount + ' yeshivot \u00B7 ' + sCount + ' seminaries';
   const footer = document.getElementById('footerRight');
-  if(footer) footer.textContent = count + ' students \u00B7 ' + yCount + ' yeshivot';
+  if(footer) footer.textContent = count + ' students \u00B7 ' + yCount + ' yeshivot \u00B7 ' + sCount + ' seminaries';
   const qsStudents = document.getElementById('qsStudents');
   if(qsStudents) qsStudents.textContent = count;
   const qsYeshivot = document.getElementById('qsYeshivot');
   if(qsYeshivot) qsYeshivot.textContent = yCount;
+  const qsSems = document.getElementById('qsSems');
+  if(qsSems) qsSems.textContent = sCount;
   const qsHs = document.getElementById('qsHs');
   if(qsHs) qsHs.textContent = hsCount;
-  const qsPhones = document.getElementById('qsPhones');
-  if(qsPhones) qsPhones.textContent = phoneCount;
   const yeshivotSub = document.getElementById('yeshivotSub');
-  if(yeshivotSub) yeshivotSub.innerHTML = yCount + ' programs &mdash; click any to explore &mdash; <strong class="compare-hint">&#x2303; ctrl+click to compare</strong>';
+  if(yeshivotSub) yeshivotSub.innerHTML = yCount + ' yeshivot &middot; ' + sCount + ' seminaries &mdash; click any to explore &mdash; <strong class="compare-hint">&#x2303; ctrl+click to compare</strong>';
 }
 
 
@@ -2147,22 +2207,23 @@ function renderSearch(q){
 
 // ── Yeshivot grid ────────────────────────────────────────────────────
 let yeshivotDone=false, compareSet=new Set();
+let _instFilter = 'all'; // 'all' | 'yeshiva' | 'seminary'
+
+function filterInstitutions(filter, btn) {
+  _instFilter = filter;
+  document.querySelectorAll('#viewYeshivot .sort-btn').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  yeshivotDone = false;
+  renderYeshivotGrid();
+}
+
 const WA_ICON = `<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>`;
 
-function renderYeshivotGrid(){
-  const grid=document.getElementById('yeshivotGrid');
-  grid.innerHTML=''; yeshivotDone=true;
-  // "Add Yourself / New Yeshiva" card goes FIRST
-  const addCard=document.createElement('div'); addCard.className='yeshiva-card add-yeshiva-card';
-  addCard.innerHTML=`<div class="yc-add-icon">+</div><div class="yc-name">Add New Yeshiva</div><div class="yc-sub">Not on the list? Add it here</div>`;
-  addCard.addEventListener('click',()=>openAddModal('yeshiva',''));
-  grid.appendChild(addCard);
-  const yeshivot=getYeshivot();
-  const max=yeshivot[0][1];
-  yeshivot.forEach(([name,count],i)=>{
+function _renderInstCards(grid, list, maxCount) {
+  list.forEach(([name,count],i)=>{
     const card=document.createElement('div'); card.className='yeshiva-card';
     card.dataset.yeshiva=name;
-    const pct=(count/max*100).toFixed(1);
+    const pct=(count/maxCount*100).toFixed(1);
     const isExtra = EXTRA_YESHIVOT.includes(name);
     const waLink = YESHIVA_WHATSAPP[name];
     const waHtml = waLink ? `<a class="yc-wa-btn" href="${esc(waLink)}" target="_blank" rel="noopener" title="Join WhatsApp group">${WA_ICON} Join Group</a>` : '';
@@ -2172,11 +2233,46 @@ function renderYeshivotGrid(){
       if(e.shiftKey||e.ctrlKey||e.metaKey) toggleCompare(name,card);
       else openOverlay('yeshiva',name);
     });
-    // Restore visual indicator if already in compareSet
     if(compareSet.has(name)){card.style.outline='2px solid var(--accent)';card.style.outlineOffset='2px';}
     grid.appendChild(card);
     setTimeout(()=>{card.querySelector('.yc-bar').style.width=pct+'%';},i*30+100);
   });
+}
+
+function renderYeshivotGrid(){
+  const grid=document.getElementById('yeshivotGrid');
+  grid.innerHTML=''; yeshivotDone=true;
+
+  const yeshivot = getYeshivotOnly();
+  const sems = getSeminariesList();
+  const maxCount = Math.max(...[...yeshivot,...sems].map(([,c])=>c), 1);
+
+  const showYeshiva = _instFilter === 'all' || _instFilter === 'yeshiva';
+  const showSem = _instFilter === 'all' || _instFilter === 'seminary';
+
+  // ── YESHIVOT SECTION ─────────────────────────────────────────────
+  if(showYeshiva){
+    const hdr = document.createElement('div'); hdr.className='institution-section-header';
+    hdr.innerHTML='<h3>Yeshivot</h3>'; grid.appendChild(hdr);
+    // Add-new card
+    const addCard=document.createElement('div'); addCard.className='yeshiva-card add-yeshiva-card';
+    addCard.innerHTML=`<div class="yc-add-icon">+</div><div class="yc-name">Add New Yeshiva</div><div class="yc-sub">Not on the list? Add it here</div>`;
+    addCard.addEventListener('click',()=>openAddModal('yeshiva','','yeshiva'));
+    grid.appendChild(addCard);
+    _renderInstCards(grid, yeshivot, maxCount);
+  }
+
+  // ── SEMINARIES SECTION ────────────────────────────────────────────
+  if(showSem){
+    const hdr2 = document.createElement('div'); hdr2.className='institution-section-header';
+    hdr2.innerHTML='<h3>Seminaries</h3>'; grid.appendChild(hdr2);
+    // Add-new card for seminary
+    const addCard2=document.createElement('div'); addCard2.className='yeshiva-card add-yeshiva-card';
+    addCard2.innerHTML=`<div class="yc-add-icon">+</div><div class="yc-name">Add New Seminary</div><div class="yc-sub">Not on the list? Add it here</div>`;
+    addCard2.addEventListener('click',()=>openAddModal('yeshiva','','seminary'));
+    grid.appendChild(addCard2);
+    _renderInstCards(grid, sems, maxCount);
+  }
 }
 
 // ── HS grid ──────────────────────────────────────────────────────────
@@ -2196,14 +2292,17 @@ function renderHsGrid(){
 let statsDone={};
 function renderStats(tab){
   const chart=document.getElementById('barChart'); chart.innerHTML='';
-  const list=tab==='yeshiva'?getYeshivot():getHsList();
-  const max=list[0][1];
-  list.forEach(([name,count])=>{
+  const list = tab==='yeshiva' ? getYeshivotOnly() : tab==='seminary' ? getSeminariesList() : getHsList();
+  if(!list.length){ chart.innerHTML='<div style="padding:48px;color:var(--mid);font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase">No data</div>'; return; }
+  const max = Math.max(...list.map(([,c])=>c));
+  // For stats display, sort by count descending
+  const sorted = [...list].sort((a,b)=>b[1]-a[1]);
+  sorted.forEach(([name,count])=>{
     const pct=(count/max*100).toFixed(1);
-    const dispName = tab==='yeshiva' ? normalizeYeshivaName(name) : name;
+    const dispName = (tab==='yeshiva'||tab==='seminary') ? normalizeYeshivaName(name) : name;
     const row=document.createElement('div'); row.className='bar-row';
     row.innerHTML=`<span class="bar-label">${esc(dispName)}</span><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div><span class="bar-num">${count}</span>`;
-    row.addEventListener('click',()=>tab==='yeshiva'?openOverlay('yeshiva',name):openHsOverlay(name));
+    row.addEventListener('click',()=>(tab==='yeshiva'||tab==='seminary')?openOverlay('yeshiva',name):openHsOverlay(name));
     chart.appendChild(row);
   });
 }
@@ -2220,7 +2319,7 @@ function openOverlay(type,name){
   overlayYeshivaName = name;
   overlayStudents=getStudents().filter(s=>s.yeshiva===name);
   overlaySort='alpha'; overlaySchoolFilter=null;
-  document.getElementById('overlayEyebrow').textContent='Yeshiva';
+  document.getElementById('overlayEyebrow').textContent=isSeminary(name)?'Seminary':'Yeshiva';
   document.getElementById('overlayTitle').textContent=normalizeYeshivaName(name);
   document.getElementById('overlayMeta').textContent=overlayStudents.length+(overlayStudents.length===1?' student enrolled':' students enrolled');
   // WhatsApp group button
@@ -2252,7 +2351,7 @@ function openHsOverlay(hs){
   overlaySort='alpha'; overlaySchoolFilter=null;
   document.getElementById('overlayEyebrow').textContent='High School';
   document.getElementById('overlayTitle').textContent=canonicalHs;
-  document.getElementById('overlayMeta').textContent=overlayStudents.length+' students across '+new Set(overlayStudents.map(s=>s.yeshiva)).size+' yeshivot';
+  document.getElementById('overlayMeta').textContent=overlayStudents.length+' students across '+new Set(overlayStudents.map(s=>s.yeshiva)).size+' institutions';
   document.getElementById('overlayWaRow').style.display='none';
   document.getElementById('overlaySearch').value='';
   document.querySelectorAll('.sort-btn').forEach((b,i)=>b.classList.toggle('active',i===0));
@@ -2327,7 +2426,14 @@ function renderOverlayList(students,query){
       return false;
     });
   }
-  if(overlaySort==='alpha') filtered.sort((a,b)=>a.name.localeCompare(b.name));
+  if(overlaySort==='alpha'){
+    filtered.sort((a,b)=>{
+      const partsA=a.name.trim().split(/\s+/), partsB=b.name.trim().split(/\s+/);
+      const lastA=partsA[partsA.length-1]||'', lastB=partsB[partsB.length-1]||'';
+      const cmp=lastA.localeCompare(lastB);
+      return cmp!==0?cmp:a.name.localeCompare(b.name);
+    });
+  }
   else filtered.sort((a,b)=>(a.high_school||'').localeCompare(b.high_school||'')||a.name.localeCompare(b.name));
   if(!filtered.length){
     list.innerHTML='<li style="padding:40px 0;font-family:Cormorant Garamond,serif;font-style:italic;color:var(--gray);font-size:1.1rem">No matches</li>';
@@ -2419,6 +2525,21 @@ function closeCompare(){
 
 // ── ADD MODAL ────────────────────────────────────────────────────────
 let addModalMode = 'student';
+let addInstType = 'yeshiva'; // 'yeshiva' | 'seminary'
+
+function setInstType(type, btn) {
+  addInstType = type;
+  document.querySelectorAll('.inst-type-btn').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  // Update placeholder
+  const input = document.getElementById('addYeshivaInput');
+  if(input) input.placeholder = type==='seminary' ? 'e.g. Sharfman\'s' : 'e.g. Shaalvim';
+  // Clear selection and rebuild dropdown if visible
+  const hiddenSel = document.getElementById('addYeshivaSelect');
+  if(hiddenSel) hiddenSel.value = '';
+  const yInput = document.getElementById('addYeshivaInput');
+  if(yInput) { yInput.value = ''; buildYeshivaDropdown(yInput); }
+}
 
 function clearAddFormErrors() {
   ['addNameError','addHsError','addPhoneError','addYeshivaError','addYeshivaNewError'].forEach(id=>{
@@ -2463,9 +2584,14 @@ function resetAddForm() {
   if(phoneWarn) phoneWarn.style.display = 'none';
   const unrecWarn = document.getElementById('hsUnrecognizedWarn');
   if(unrecWarn) unrecWarn.style.display = 'none';
+  // Reset institution type toggle to 'yeshiva'
+  addInstType = 'yeshiva';
+  document.querySelectorAll('.inst-type-btn').forEach((b,i)=>b.classList.toggle('active',i===0));
+  const yInputEl = document.getElementById('addYeshivaInput');
+  if(yInputEl) yInputEl.placeholder = 'e.g. Shaalvim';
 }
 
-function openAddModal(mode, prefillName){
+function openAddModal(mode, prefillName, prefillInstType){
   addModalMode = mode;
   const modal = document.getElementById('addModal');
   const title = document.getElementById('addModalTitle');
@@ -2481,6 +2607,10 @@ function openAddModal(mode, prefillName){
     studentFields.style.display = 'block';
     yeshivaFields.style.display = 'none';
     if(prefillName) document.getElementById('addName').value = prefillName;
+    // Apply pre-filled institution type (e.g. when coming from seminary section)
+    if(prefillInstType === 'seminary'){
+      setInstType('seminary', document.getElementById('instTypeSem'));
+    }
     // Initialize yeshiva autocomplete
     yeshivaSelectedValue = '';
     const yInput = document.getElementById('addYeshivaInput');
@@ -2491,7 +2621,8 @@ function openAddModal(mode, prefillName){
     initYeshivaAutocomplete();
     initHsAutocomplete();
   } else {
-    title.textContent = 'Add New Yeshiva';
+    const typeLabel = prefillInstType === 'seminary' ? 'Seminary' : 'Yeshiva';
+    title.textContent = 'Add New ' + typeLabel;
     if(subEl) subEl.textContent = '';
     studentFields.style.display = 'none';
     yeshivaFields.style.display = 'block';
@@ -2577,13 +2708,15 @@ async function submitAdd(){
 
     // FIX 1: validate yeshiva selection
     if(!yeshiva){
-      showFieldError('addYeshivaInput','addYeshivaError','Please select your yeshiva.');
+      const typeLabel = addInstType === 'seminary' ? 'seminary' : 'yeshiva';
+      showFieldError('addYeshivaInput','addYeshivaError','Please select your ' + typeLabel + '.');
       hasError=true;
     } else if(yeshiva === '__new__'){
       const newYeshiva = document.getElementById('addYeshivaNew').value.trim();
       // FIX 14: validate new yeshiva name
       if(!newYeshiva || newYeshiva.length < 3){
-        showFieldError('addYeshivaNew','addYeshivaNewError','Please enter the name of your yeshiva.');
+        const typeLabel2 = addInstType === 'seminary' ? 'seminary' : 'yeshiva';
+        showFieldError('addYeshivaNew','addYeshivaNewError','Please enter the name of your ' + typeLabel2 + '.');
         hasError=true;
       }
     }
@@ -2659,7 +2792,7 @@ async function submitAdd(){
     if(!name){ shakeField('addYeshivaName'); return; }
     const dup = getYeshivot().find(([y])=>norm(y)===norm(name));
     if(dup){
-      document.getElementById('addError').textContent = 'That yeshiva is already listed!';
+      document.getElementById('addError').textContent = 'That institution is already listed!';
       document.getElementById('addError').style.display='block';
       return;
     }
@@ -2701,7 +2834,7 @@ function showAddSuccess(type, name, yeshiva, flagged){
     }
   } else {
     succ.innerHTML = `<div class="success-anim"><div class="success-checkmark">&#10003;</div></div>
-      <div class="success-title">Yeshiva Added!</div>
+      <div class="success-title">Added!</div>
       <div class="success-sub"><strong>${esc(name)}</strong> is now in the directory.</div>
       <button class="modal-done-btn" onclick="closeAddModal()">Done</button>`;
     launchConfetti();
@@ -2766,7 +2899,7 @@ function renderWaGroupsGrid() {
   const students = getStudents();
   const yeshivot = getYeshivot();
   
-  // Build a map of seminary → WA link + status
+  // Build a map of institution → WA link + status
   const allGroups = yeshivot.map(([name, count]) => {
     const wa = YESHIVA_WHATSAPP[name] || null;
     const status = wa ? 'active' : 'pending';
@@ -2864,7 +2997,11 @@ loadApprovedSubmissions().then(() => subscribeToSubmissions());
           </div>
         </div>
         <div class="field-group">
-          <label class="field-label" for="addYeshivaInput">Yeshiva <span>*</span></label>
+          <label class="field-label" for="addYeshivaInput">Institution <span>*</span></label>
+          <div class="inst-type-toggle" id="instTypeToggle">
+            <button type="button" class="inst-type-btn active" id="instTypeYeshiva" onclick="setInstType('yeshiva',this)">Yeshiva</button>
+            <button type="button" class="inst-type-btn" id="instTypeSem" onclick="setInstType('seminary',this)">Seminary (Sem)</button>
+          </div>
           <div class="yeshiva-autocomplete-wrap">
             <input class="field-input" id="addYeshivaInput" type="text" placeholder="e.g. Shaalvim" autocomplete="off" role="combobox" aria-expanded="false" aria-autocomplete="list" aria-controls="yeshivaDropdown"/>
             <div class="yeshiva-dropdown" id="yeshivaDropdown" role="listbox"></div>
@@ -2880,7 +3017,7 @@ loadApprovedSubmissions().then(() => subscribeToSubmissions());
       <!-- YESHIVA FIELDS -->
       <div id="addYeshivaFields" style="display:none">
         <div class="field-group">
-          <label class="field-label" for="addYeshivaName">Yeshiva Name <span>*</span></label>
+          <label class="field-label" for="addYeshivaName">Institution Name <span>*</span></label>
           <input class="field-input" id="addYeshivaName" type="text" placeholder="e.g. Yeshivat Example"/>
         </div>
       </div>
