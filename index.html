@@ -1343,6 +1343,41 @@ input, select, textarea {
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+/* ── Share button on result items ── */
+.share-btn {
+  background: none; border: none; cursor: pointer;
+  color: var(--mid); font-size: 0.72rem; padding: 0 4px;
+  vertical-align: middle; opacity: 0; transition: opacity 0.15s, color 0.15s;
+  line-height: 1; font-family: inherit;
+}
+.result-item:hover .share-btn { opacity: 1; }
+.overlay-item:hover .share-btn { opacity: 1; }
+.share-btn:hover { color: var(--accent); }
+
+/* ── Share row in student modal ── */
+.smd-share-row {
+  display: flex; gap: 8px; margin-top: 16px; padding-top: 4px;
+}
+.smd-share-btn {
+  flex: 1; padding: 8px 4px; border-radius: 4px; border: 1px solid var(--line);
+  background: none; cursor: pointer; font-family: inherit;
+  font-size: 0.62rem; letter-spacing: 0.09em; text-transform: uppercase;
+  color: var(--gray); transition: background 0.15s, color 0.15s, border-color 0.15s;
+  display: flex; align-items: center; justify-content: center; gap: 5px;
+}
+.smd-share-btn:hover { background: var(--black); color: var(--bg); border-color: var(--black); }
+.smd-share-btn.wa { border-color: #25d366; color: #25d366; }
+.smd-share-btn.wa:hover { background: #25d366; color: white; border-color: #25d366; }
+@media (hover: none) { .share-btn { opacity: 1; } }
+
+/* ── Highlight pulse when auto-loaded from URL ── */
+@keyframes highlightPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(184,151,90,0.55), 0 24px 72px rgba(0,0,0,0.2); }
+  60%  { box-shadow: 0 0 0 14px rgba(184,151,90,0), 0 24px 72px rgba(0,0,0,0.2); }
+  100% { box-shadow: 0 0 0 0 rgba(184,151,90,0), 0 24px 72px rgba(0,0,0,0.2); }
+}
+.student-modal.highlight { animation: highlightPulse 0.9s ease-out 2; }
+
 /* ── FIX #6: Student detail modal ── */
 .student-modal-backdrop {
   position: fixed; inset: 0; z-index: 700;
@@ -2368,7 +2403,39 @@ function showToast(msg) {
 }
 
 // ── Student detail modal ──────────────────────────────────────────────
-function openStudentDetail(s) {
+
+// Generate a URL-friendly slug: "firstname-lastname-institution"
+function makeStudentSlug(s) {
+  const slugify = str => (str || '').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  const instPart = slugify(normalizeYeshivaName(s.yeshiva) || s.yeshiva || '');
+  return slugify(s.name) + (instPart ? '-' + instPart : '');
+}
+
+function findStudentBySlug(slug) {
+  return getStudents().find(s => makeStudentSlug(s) === slug) || null;
+}
+
+function shareStudent(s) {
+  const slug = makeStudentSlug(s);
+  const url = location.origin + location.pathname + '?student=' + encodeURIComponent(slug);
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(url).catch(() => _fallbackCopy(url));
+  } else {
+    _fallbackCopy(url);
+  }
+  showToast('Link copied!');
+}
+
+function shareStudentWhatsApp(s) {
+  const slug = makeStudentSlug(s);
+  const url = location.origin + location.pathname + '?student=' + encodeURIComponent(slug);
+  const msg = 'Check out ' + s.name + '\u2019s profile on Yeshiva Directory: ' + url;
+  window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank', 'noopener');
+}
+
+function openStudentDetail(s, highlight) {
   document.getElementById('studentModalName').textContent = s.name;
   const hs = normalizeHsName(s.high_school) || '—';
   const dispYeshiva = normalizeYeshivaName(s.yeshiva);
@@ -2376,13 +2443,31 @@ function openStudentDetail(s) {
   document.getElementById('studentModalDetail').innerHTML = `
     <div class="smd-row"><span class="smd-label">High School</span><span>${esc(hs)}</span></div>
     <div class="smd-row"><span class="smd-label">Institution</span><span class="tag tag-yeshiva" style="cursor:pointer" onclick="closeStudentModal();openOverlay('yeshiva','${esc(s.yeshiva)}')">${esc(dispYeshiva)}</span></div>
-    ${phoneRow}`;
-  document.getElementById('studentModal').classList.add('open');
+    ${phoneRow}
+    <div class="smd-share-row">
+      <button class="smd-share-btn" onclick="shareStudent(_currentModalStudent)" title="Copy shareable link">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        Copy Link
+      </button>
+      <button class="smd-share-btn wa" onclick="shareStudentWhatsApp(_currentModalStudent)" title="Share via WhatsApp">
+        ${WA_ICON} WhatsApp
+      </button>
+    </div>`;
+  _currentModalStudent = s;
+  const modal = document.getElementById('studentModal');
+  modal.classList.remove('highlight');
+  modal.classList.add('open');
   document.getElementById('studentModalBackdrop').classList.add('open');
+  if (highlight) {
+    requestAnimationFrame(() => { requestAnimationFrame(() => { modal.classList.add('highlight'); }); });
+  }
+  history.replaceState(null, '', '?student=' + encodeURIComponent(makeStudentSlug(s)));
 }
+let _currentModalStudent = null;
 function closeStudentModal() {
   document.getElementById('studentModal').classList.remove('open');
   document.getElementById('studentModalBackdrop').classList.remove('open');
+  history.replaceState(null, '', location.pathname);
 }
 
 // ── Search view ──────────────────────────────────────────────────────
@@ -2421,9 +2506,11 @@ function renderSearch(q){
           <span class="tag tag-yeshiva" onclick="event.stopPropagation();openOverlay('yeshiva','${esc(s.yeshiva)}')">${esc(dispYeshiva)}</span>
         </div>
       </div>
-      <div class="result-phone">${phoneStr}${copyBtn}</div>`;
+      <div class="result-phone">${phoneStr}${copyBtn}<button class="share-btn" title="Share profile">&#x2197;</button></div>`;
+    const shareBtn = li.querySelector('.share-btn');
+    if (shareBtn) shareBtn.addEventListener('click', e => { e.stopPropagation(); shareStudent(s); });
     li.addEventListener('click', (e) => {
-      if(e.target.closest('.tag,.inline-add-btn,.phone-copy-btn,.phone-link')) return;
+      if(e.target.closest('.tag,.inline-add-btn,.phone-copy-btn,.phone-link,.share-btn')) return;
       openStudentDetail(s);
     });
     $rl.appendChild(li);
@@ -2670,7 +2757,9 @@ function renderOverlayList(students,query){
     const midCol = overlayYeshivaName ? esc(normalizeHsName(s.high_school)||'—') : esc(normalizeYeshivaName(s.yeshiva)||'—');
     const phoneStr = s.phone ? phoneHtml(s.phone) : '';
     const copyBtn = s.phone ? `<button class="phone-copy-btn" onclick="copyToClipboard('${esc(formatPhone(s.phone)||s.phone)}')" title="Copy phone number" aria-label="Copy phone number">⧉</button>` : '';
-    li.innerHTML=`<span class="oi-name student-name">${esc(s.name)} ${badge}</span><span class="oi-hs">${midCol}</span><span class="oi-phone">${phoneStr}${copyBtn}</span>`;
+    li.innerHTML=`<span class="oi-name student-name">${esc(s.name)} ${badge}</span><span class="oi-hs">${midCol}</span><span class="oi-phone">${phoneStr}${copyBtn}<button class="share-btn" title="Share profile">&#x2197;</button></span>`;
+    const oiShareBtn = li.querySelector('.share-btn');
+    if (oiShareBtn) oiShareBtn.addEventListener('click', e => { e.stopPropagation(); shareStudent(s); });
     list.appendChild(li);
   });
 }
@@ -3192,8 +3281,21 @@ const skeletonList = document.getElementById('skeletonList');
 if(skeletonList) skeletonList.style.display='none';
 // FIX 4/12: update counters on load
 updateCounters();
+// ── Deep link: attempt to open from ?student=slug immediately (static students) ──
+const _deepLinkSlug = new URLSearchParams(location.search).get('student');
+if (_deepLinkSlug) {
+  const _deepLinkMatch = findStudentBySlug(_deepLinkSlug);
+  if (_deepLinkMatch) openStudentDetail(_deepLinkMatch, true);
+}
 // Supabase: load persisted approved entries, then start real-time listener
-loadApprovedSubmissions().then(() => subscribeToSubmissions());
+loadApprovedSubmissions().then(() => {
+  subscribeToSubmissions();
+  // Re-check deep link now that DB students are loaded (if modal not already open)
+  if (_deepLinkSlug && !document.getElementById('studentModal').classList.contains('open')) {
+    const match = findStudentBySlug(_deepLinkSlug);
+    if (match) openStudentDetail(match, true);
+  }
+});
 </script>
 
 <!-- ═══ ADD MODAL BACKDROP ═══ -->
