@@ -1622,6 +1622,63 @@ input, select, textarea {
   .student-modal { padding: 24px 16px max(24px, env(safe-area-inset-bottom)); }
   .smd-name { font-size: 1.5rem; }
 }
+
+/* ════════════════════════════════════════════════════
+   MOBILE RESPONSIVENESS — IPHONE LAYOUT IMPROVEMENTS
+   ════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  /* Two-row header: brand on row 1, nav scrollable on row 2 */
+  .header {
+    height: auto;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+  }
+  .header-row1 {
+    display: flex;
+    align-items: center;
+    padding: 10px 0 4px;
+  }
+  .header-brand {
+    font-size: 0.82rem;
+    letter-spacing: 0.14em;
+  }
+  .header-nav {
+    padding-bottom: 8px;
+    width: 100%;
+  }
+
+  /* Stats bar chart: responsive, no horizontal overflow */
+  .bar-chart {
+    overflow-x: hidden;
+    padding-bottom: 130px;
+  }
+  .bar-row {
+    min-width: 0;
+    grid-template-columns: 90px 1fr 28px;
+    gap: 10px;
+  }
+  .bar-label {
+    font-size: 0.7rem;
+    padding-left: 4px;
+  }
+  .bar-num { font-size: 0.9rem; }
+
+  /* Yeshivot & HS hero: stack layout vertically */
+  .yeshivot-hero, .hs-hero {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding-bottom: 20px;
+  }
+  .yeshivot-sub { white-space: normal; }
+
+  /* Sufficient bottom padding so content scrolls past the fixed FAB */
+  .results-wrap { padding-bottom: 130px; }
+  .yeshivot-grid,
+  .hs-grid,
+  .wa-groups-grid { padding-bottom: 130px; }
+}
 </style>
 </head>
 <body>
