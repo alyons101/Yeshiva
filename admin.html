@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Moderation Dashboard — Yeshiva Directory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:ital,wght@0,200;0,300;0,400;1,300&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabaseClient.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #f9f7f4; --white: #ffffff; --black: #111010; --ink: #1a1a18;
+  --gray: #8a8a82; --mid: #c8c6c0; --line: #e4e2dc; --cream: #f2efe9;
+  --accent: #b8975a; --green: #3d6b4f; --red: #c0392b;
+}
+body { font-family: 'DM Sans', system-ui, sans-serif; font-weight: 300;
+  background: var(--bg); color: var(--ink); min-height: 100vh; }
+.header {
+  padding: 0 48px; height: 64px; display: flex; align-items: center;
+  justify-content: space-between; background: rgba(249,247,244,0.97);
+  border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 100;
+}
+.header-brand { font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 1rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; }
+.header-right { font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gray); }
+.main { max-width: 900px; margin: 0 auto; padding: 48px 24px 96px; }
+h1 { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 2.4rem;
+  font-weight: 300; margin-bottom: 8px; }
+.subtitle { font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--gray); margin-bottom: 40px; }
+.tabs { display: flex; gap: 0; margin-bottom: 32px; border-bottom: 1px solid var(--line); }
+.tab-btn {
+  font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase;
+  background: none; border: none; cursor: pointer; padding: 12px 20px;
+  color: var(--gray); font-family: inherit; font-weight: 400;
+  border-bottom: 2px solid transparent; transition: color 0.2s, border-color 0.2s;
+  position: relative; bottom: -1px;
+}
+.tab-btn.active { color: var(--black); border-bottom-color: var(--black); }
+.tab-btn .badge {
+  display: inline-block; background: var(--red); color: #fff;
+  font-size: 0.55rem; border-radius: 10px; padding: 1px 5px;
+  margin-left: 5px; vertical-align: middle;
+}
+.submission-list { list-style: none; }
+.submission-item {
+  display: grid; grid-template-columns: 1fr auto;
+  gap: 16px; align-items: start;
+  padding: 20px 0; border-bottom: 1px solid var(--line);
+  animation: fadeIn 0.3s ease;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.sub-info { display: flex; flex-direction: column; gap: 4px; }
+.sub-name { font-size: 1rem; color: var(--black); font-weight: 400; }
+.sub-meta { font-size: 0.7rem; color: var(--gray); letter-spacing: 0.06em; }
+.sub-flag { font-size: 0.63rem; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--red); margin-top: 4px; }
+.sub-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.btn {
+  font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase;
+  border: 1px solid var(--line); background: none; cursor: pointer;
+  padding: 8px 14px; font-family: inherit; font-weight: 400;
+  border-radius: 2px; transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.btn-approve { border-color: var(--green); color: var(--green); }
+.btn-approve:hover { background: var(--green); color: #fff; }
+.btn-reject { border-color: var(--red); color: var(--red); }
+.btn-reject:hover { background: var(--red); color: #fff; }
+.btn:disabled { opacity: 0.4; pointer-events: none; }
+.empty { text-align: center; padding: 64px 0; color: var(--mid);
+  font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase; }
+.loading { text-align: center; padding: 48px 0; color: var(--mid);
+  font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; }
+.error-banner {
+  background: #fdf2f2; border: 1px solid #f5c6c6; color: var(--red);
+  padding: 16px 20px; border-radius: 4px; margin-bottom: 24px;
+  font-size: 0.78rem; line-height: 1.5;
+}
+.toast {
+  position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%) translateY(80px);
+  background: var(--black); color: var(--bg); padding: 12px 24px;
+  border-radius: 4px; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase;
+  transition: transform 0.3s cubic-bezier(0.22,1,0.36,1); pointer-events: none; z-index: 999;
+}
+.toast.visible { transform: translateX(-50%) translateY(0); }
+@media (max-width: 600px) {
+  .header { padding: 0 16px; }
+  .main { padding: 32px 16px 80px; }
+  .submission-item { grid-template-columns: 1fr; }
+  .sub-actions { justify-content: flex-start; }
+}
+</style>
+</head>
+<body>
+<header class="header">
+  <span class="header-brand">Yeshiva Directory</span>
+  <span class="header-right">Moderation Dashboard</span>
+</header>
+
+<main class="main">
+  <h1>Moderation <em>Dashboard</em></h1>
+  <p class="subtitle">Review, approve, or reject flagged submissions</p>
+
+  <div id="errorBanner" class="error-banner" style="display:none"></div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="flagged" onclick="switchTab('flagged', this)">
+      Flagged <span class="badge" id="flaggedBadge">0</span>
+    </button>
+    <button class="tab-btn" data-tab="pending" onclick="switchTab('pending', this)">
+      Pending <span class="badge" id="pendingBadge" style="background:var(--gray)">0</span>
+    </button>
+    <button class="tab-btn" data-tab="approved" onclick="switchTab('approved', this)">
+      Approved
+    </button>
+    <button class="tab-btn" data-tab="rejected" onclick="switchTab('rejected', this)">
+      Rejected
+    </button>
+  </div>
+
+  <div id="listContainer">
+    <div class="loading" id="loadingMsg">Loading submissions&hellip;</div>
+    <ul class="submission-list" id="submissionList" style="display:none"></ul>
+    <div class="empty" id="emptyMsg" style="display:none">No submissions in this category</div>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let currentTab = 'flagged';
+let allSubmissions = {};
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('visible');
+  setTimeout(() => t.classList.remove('visible'), 2400);
+}
+
+function showError(msg) {
+  const el = document.getElementById('errorBanner');
+  el.textContent = msg;
+  el.style.display = msg ? 'block' : 'none';
+}
+
+async function loadSubmissions() {
+  if (!supabaseDB) {
+    showError('Supabase is not configured. Please update supabaseClient.js with your project credentials.');
+    document.getElementById('loadingMsg').style.display = 'none';
+    return;
+  }
+  try {
+    const { data, error } = await supabaseDB
+      .from('submissions')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    // Group by status
+    allSubmissions = { flagged: [], pending: [], approved: [], rejected: [] };
+    (data || []).forEach(row => {
+      const key = allSubmissions[row.status] ? row.status : 'pending';
+      allSubmissions[key].push(row);
+    });
+    updateBadges();
+    renderTab(currentTab);
+  } catch (err) {
+    showError('Failed to load submissions: ' + (err.message || err));
+    document.getElementById('loadingMsg').style.display = 'none';
+  }
+}
+
+function updateBadges() {
+  document.getElementById('flaggedBadge').textContent = (allSubmissions.flagged || []).length;
+  document.getElementById('pendingBadge').textContent  = (allSubmissions.pending || []).length;
+}
+
+function renderTab(tab) {
+  const list = document.getElementById('submissionList');
+  const loading = document.getElementById('loadingMsg');
+  const empty = document.getElementById('emptyMsg');
+  loading.style.display = 'none';
+  const items = allSubmissions[tab] || [];
+  if (!items.length) {
+    list.style.display = 'none';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  list.style.display = 'block';
+  list.innerHTML = '';
+  items.forEach(sub => {
+    const li = document.createElement('li');
+    li.className = 'submission-item';
+    li.id = 'sub-' + sub.id;
+    const created = new Date(sub.created_at).toLocaleString();
+    const flagHtml = sub.flagged_reason
+      ? `<div class="sub-flag">⚑ ${esc(sub.flagged_reason.replace(/_/g, ' '))}</div>` : '';
+    const actions = (tab === 'flagged' || tab === 'pending')
+      ? `<div class="sub-actions">
+           <button class="btn btn-approve" onclick="moderate(${sub.id},'approved')">Approve</button>
+           <button class="btn btn-reject" onclick="moderate(${sub.id},'rejected')">Reject</button>
+         </div>`
+      : tab === 'approved'
+        ? `<div class="sub-actions">
+             <button class="btn btn-reject" onclick="moderate(${sub.id},'rejected')">Reject</button>
+           </div>`
+        : `<div class="sub-actions">
+             <button class="btn btn-approve" onclick="moderate(${sub.id},'approved')">Re-approve</button>
+           </div>`;
+    li.innerHTML = `
+      <div class="sub-info">
+        <div class="sub-name">${esc(sub.name)} &rarr; ${esc(sub.yeshiva)}</div>
+        <div class="sub-meta">${sub.high_school ? esc(sub.high_school) + ' &middot; ' : ''}${sub.email ? esc(sub.email) + ' &middot; ' : ''}${created}</div>
+        ${flagHtml}
+      </div>
+      ${actions}`;
+    list.appendChild(li);
+  });
+}
+
+async function moderate(id, newStatus) {
+  const item = document.getElementById('sub-' + id);
+  if (item) {
+    const btns = item.querySelectorAll('.btn');
+    btns.forEach(b => b.disabled = true);
+  }
+  try {
+    const { error } = await supabaseDB
+      .from('submissions')
+      .update({ status: newStatus })
+      .eq('id', id);
+    if (error) throw error;
+    // Move submission between groups
+    for (const status of Object.keys(allSubmissions)) {
+      const idx = allSubmissions[status].findIndex(s => s.id === id);
+      if (idx !== -1) {
+        const [moved] = allSubmissions[status].splice(idx, 1);
+        moved.status = newStatus;
+        if (!allSubmissions[newStatus]) allSubmissions[newStatus] = [];
+        allSubmissions[newStatus].unshift(moved);
+        break;
+      }
+    }
+    updateBadges();
+    renderTab(currentTab);
+    showToast(newStatus === 'approved' ? 'Entry approved ✓' : 'Entry rejected');
+  } catch (err) {
+    showError('Action failed: ' + (err.message || err));
+    if (item) {
+      const btns = item.querySelectorAll('.btn');
+      btns.forEach(b => b.disabled = false);
+    }
+  }
+}
+
+function switchTab(tab, btn) {
+  currentTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTab(tab);
+}
+
+function esc(s) {
+  if (!s) return '';
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Subscribe to live changes so the dashboard stays current
+function subscribeAdmin() {
+  if (!supabaseDB) return;
+  supabaseDB
+    .channel('admin:submissions')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'submissions' }, () => {
+      loadSubmissions();
+    })
+    .subscribe();
+}
+
+loadSubmissions().then(() => subscribeAdmin());
+</script>
+</body>
+</html>
